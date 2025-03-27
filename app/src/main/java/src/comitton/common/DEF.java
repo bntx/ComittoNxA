@@ -1,9 +1,12 @@
 package src.comitton.common;
 
+import java.io.File;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
@@ -1713,7 +1716,7 @@ public class DEF {
 
 	// Comittoの諸々保存先のパスを返す
 	static public String getBaseDirectory() {
-		return externalFilesDir ;
+		return externalFilesDir + "/" ;
 	}
 
 	// 設定画面のメッセージのフォントサイズ

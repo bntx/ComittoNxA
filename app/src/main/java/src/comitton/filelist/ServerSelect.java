@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 
 import jp.dip.muracoro.comittona.R;
 
+import src.comitton.common.DEF;
 import src.comitton.data.ServerData;
 import src.comitton.data.RecordItem;
 
