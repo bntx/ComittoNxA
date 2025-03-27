@@ -27,6 +27,9 @@ libsimd_SOURCES_DIST = simd/jsimd_arm_neon.S \
 else ifeq ($(TARGET_ARCH_ABI),armeabi)
 libsimd_SOURCES_DIST = simd/jsimd_arm_neon.S \
                        simd/jsimd_arm.c 
+else ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
+libsimd_SOURCES_DIST = simd/jsimd_arm64_neon.S \
+                       simd/jsimd_arm64.c 
 else ifeq ($(TARGET_ARCH_ABI),x86)
 libsimd_SOURCES_DIST = simd/jsimdcpu.asm \
                        simd/jfdctflt-3dn.asm \
@@ -86,6 +89,8 @@ ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
     LOCAL_ARM_MODE :=arm
     LOCAL_ARM_NEON :=true
 else ifeq ($(TARGET_ARCH_ABI),armeabi)
+    LOCAL_ARM_MODE :=arm
+else ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
     LOCAL_ARM_MODE :=arm
 else ifeq ($(TARGET_ARCH_ABI),x86)
     LOCAL_CFLAGS += -mfpmath=sse -msse2 -m32 -masm=intel

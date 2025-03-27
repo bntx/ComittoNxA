@@ -26,6 +26,10 @@ else ifeq ($(TARGET_ARCH_ABI),armeabi)
     LOCAL_CFLAGS += -fPIC
     LOCAL_ARM_MODE :=arm
     LOCAL_ARM_NEON :=false
+else ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
+    LOCAL_CFLAGS += -fPIC
+    LOCAL_ARM_MODE :=arm
+    LOCAL_ARM_NEON :=false
 else ifeq ($(TARGET_ARCH_ABI),x86)
     LOCAL_CFLAGS += -mfpmath=sse -msse2 -m32 -masm=intel
 endif
