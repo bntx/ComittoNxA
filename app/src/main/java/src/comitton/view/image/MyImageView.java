@@ -555,6 +555,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				}
 
 				// ２つ前のページを表示用Bitmapに書き込む
+				/*
 				if (prev2Page > 0  && prev2Page < mImageManager.length()) {
 					prev2Image = mImageManager.getImageData(prev2Page);
 
@@ -590,6 +591,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						}
 					}
 				}
+				*/
 
 				// 次のページを表示用Bitmapに書き込む
 				if (nextPage > 0  && nextPage < mImageManager.length()) {
@@ -629,6 +631,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				}
 
 				// 2つ次のページを表示用Bitmapに書き込む
+				/*
 				if (next2Page > 0  && next2Page < mImageManager.length()) {
 					next2Image = mImageManager.getImageData(next2Page);
 
@@ -664,6 +667,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						}
 					}
 				}
+				*/
 
 				// 左ページを表示用Bitmapに書き込む
 				if (mImage[1] != null) {
