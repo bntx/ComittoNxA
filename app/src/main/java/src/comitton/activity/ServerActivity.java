@@ -255,7 +255,7 @@ public class ServerActivity extends ListActivity {
 		public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 			if (position == 0) {
 				// ローカルはストレージルートにリセット
-				String path = Environment.getExternalStorageDirectory().getAbsolutePath() + '/';
+				String path = DEF.getExternalFilesDir().getAbsolutePath() + '/';
 				mServer.select(ServerSelect.INDEX_LOCAL);
 				mServer.setPath(path);
 				mServerListAdapter.notifyDataSetChanged();

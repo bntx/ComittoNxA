@@ -30,7 +30,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private static final int LISTMODE_WEBDAV = 2;
 
 	//標準のストレージパスを保存
-	private static final String mStaticRootDir = Environment.getExternalStorageDirectory().getAbsolutePath() +"/";
+	private static final String mStaticRootDir = DEF.getExternalFilesDir().getAbsolutePath() +"/";
 
 	private ArrayList<FileData> mFileList = null;
 
