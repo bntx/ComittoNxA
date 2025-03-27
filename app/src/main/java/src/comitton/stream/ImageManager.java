@@ -2188,8 +2188,8 @@ public class ImageManager extends InputStream implements Runnable {
 		// サーバアクセス時はファイルキャッシュも行う
 		if (isEnable) {
 			// キャッシュ読込モードオン
-			String file = Environment.getExternalStorageDirectory() + "/comittona/comittona.cache";
-			String path = Environment.getExternalStorageDirectory() + "/comittona/thumb/";
+			String file = DEF.getCacheDir() + "/comittona.cache";
+			String path = DEF.getCacheDir() + "/thumb/";
 			try {
 				new File(path).mkdirs();
 				new File(file).delete();
@@ -4122,8 +4122,7 @@ public class ImageManager extends InputStream implements Runnable {
 				CallImgLibrary.ImageCancel(0);
 
 				// キャッシュ読込モードオン
-				new File(Environment.getExternalStorageDirectory() + "/comittona/").mkdirs();
-				new File(Environment.getExternalStorageDirectory() + "/comittona/share/").mkdirs();
+				new File(DEF.getCacheDir() + "/share/").mkdirs();
 
 				if (name == null) {
 					name = new String();
@@ -4131,7 +4130,7 @@ public class ImageManager extends InputStream implements Runnable {
 				}
 				name = name.replace("\\", "_");
 				name = name.replace("/", "_");
-				String file = Environment.getExternalStorageDirectory() + "/comittona/share/" + name;
+				String file = DEF.getCacheDir() + "/share/" + name;
 				new File(file).delete();
 
 				BufferedOutputStream os;
@@ -4235,7 +4234,7 @@ public class ImageManager extends InputStream implements Runnable {
 	// 共有ファイルを削除する
 	public void deleteShareCache() {
 		// キャッシュ保存先
-		String path = Environment.getExternalStorageDirectory() + "/comittona/share/";
+		String path = DEF.getCacheDir() + "/share/";
 
 		// ファイルのリスト取得
 		File files[] = new File(path).listFiles();

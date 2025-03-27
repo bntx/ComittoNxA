@@ -44,7 +44,7 @@ public class ServerSelect {
 			if (!dir.canRead()) {
 				// 読み取り権限がない
 				// ストレージルートにリセット
-				mLocalPath = Environment.getExternalStorageDirectory().getAbsolutePath() + '/';
+				mLocalPath = DEF.getExternalFilesDir().getAbsolutePath() + '/';
 			}
 		}
 

@@ -249,6 +249,7 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		DEF.init(this);
 
 		// 設定の読込
 		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -258,7 +259,7 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 			if (mInitialize >= 3) {
 				//起動処理中が最後まで実行されなかった
 				// ローカルはストレージルートにリセット
-				String path = Environment.getExternalStorageDirectory().getAbsolutePath() + '/';
+				String path = DEF.getExternalFilesDir().getAbsolutePath() + '/';
 				ed.putString("path", path);
 
 				ed.putInt("ListMode", FileListArea.LISTMODE_LIST);
@@ -410,7 +411,7 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 			File current_dir = new File(mPath);
 			if (!current_dir.canRead()) {
 				// 読み取り権限がない
-				mPath = Environment.getExternalStorageDirectory().getAbsolutePath() + '/';
+				mPath = getExternalFilesDir(null).getAbsolutePath() + '/';
 			}
 		}
 
@@ -2633,7 +2634,7 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 
 			if (serverindex == ServerSelect.INDEX_LOCAL) {
 				// ローカルの場合はストレージルートにリセット
-				String path = Environment.getExternalStorageDirectory().getAbsolutePath() + '/';
+				String path = getExternalFilesDir(null).getAbsolutePath() + '/';
 				//path = DEF.getBaseDirectory();
 				server.select(serverindex);
 				server.setPath(path);

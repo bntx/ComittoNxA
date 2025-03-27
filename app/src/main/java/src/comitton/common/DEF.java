@@ -1175,12 +1175,20 @@ public class DEF {
 		return val;
 	}
 
+	static public File getExternalFilesDir() {
+		return externalFilesDir;
+	}
+
+	static public File getCacheDir() {
+		return cacheDir;
+	}
+
 	static public String getFontDirectory() {
-		return Environment.getExternalStorageDirectory() + "/comittona/font/";
+		return externalFilesDir + "/font/" ;
 	}
 
 	static public String getConfigDirectory() {
-		return Environment.getExternalStorageDirectory() + "/comittona/conf/";
+		return externalFilesDir + "/conf/" ;
 	}
 
 	// パス部分のみ取得
@@ -1705,7 +1713,7 @@ public class DEF {
 
 	// Comittoの諸々保存先のパスを返す
 	static public String getBaseDirectory() {
-		return Environment.getExternalStorageDirectory() + "/comittona/";
+		return externalFilesDir ;
 	}
 
 	// 設定画面のメッセージのフォントサイズ
@@ -1819,4 +1827,17 @@ public class DEF {
 			Log.d("", "" + ste[i]);
 		}
 	}
+
+	private static File externalFilesDir;
+	private static File cacheDir;
+	
+	public static void init(Context context) {
+		externalFilesDir = context.getExternalFilesDir(null);
+		cacheDir = context.getCacheDir();
+
+		Log.i("", "externalFilesDir:" + externalFilesDir );
+		Log.i("", "cacheDir:" + cacheDir );
+
+	}
+
 }
