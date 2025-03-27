@@ -363,7 +363,7 @@ public class RecordList {
 	}
 
 	private static String getFilePath(int type) {
-		String path = DEF.getBaseDirectory() + "conf/";
+		String path = DEF.getBaseDirectory() + "/conf/";
 		try {
 			// ディレクトリがなければ作成
 			new File(path).mkdirs();

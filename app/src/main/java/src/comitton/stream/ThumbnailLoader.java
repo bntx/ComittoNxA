@@ -57,7 +57,7 @@ public class ThumbnailLoader {
 		mThumbCacheNum = cachenum;
 
 		// キャッシュフォルダ
-		mCachePath = Environment.getExternalStorageDirectory() + "/comittona/thumb/";
+		mCachePath = DEF.getCacheDir() + "/thumb/";
 		try {
 			new File(mCachePath).mkdirs();
 		}
@@ -172,7 +172,7 @@ public class ThumbnailLoader {
 		}
 
 		// キャッシュ保存先
-		String path = Environment.getExternalStorageDirectory() + "/comittona/thumb/";
+		String path = DEF.getCacheDir() + "/thumb/";
 
 		File files[] = new File(path).listFiles();
 		if (files == null) {
@@ -214,7 +214,7 @@ public class ThumbnailLoader {
 
 	public static void deleteThumbnailCache(String filepath, int thum_cx, int thum_cy) {
 		// キャッシュ保存先
-		String path = Environment.getExternalStorageDirectory() + "/comittona/thumb/";
+		String path = DEF.getCacheDir() + "/thumb/";
 		String pathcode = DEF.makeCode(filepath, thum_cx, thum_cy);
 
 		// キャッシュファイルを削除
