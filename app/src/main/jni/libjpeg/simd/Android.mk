@@ -13,6 +13,8 @@ libjpeg_SOURCES_DIST = simd/jsimd_arm_neon.S \
                        simd/jsimd_arm.c 
 else ifeq ($(TARGET_ARCH_ABI),armeabi)
 libjpeg_SOURCES_DIST = simd/jsimd_arm.c 
+else ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
+libjpeg_SOURCES_DIST = simd/jsimd_arm.c 
 else ifeq ($(TARGET_ARCH_ABI),x86)
 libjpeg_SOURCES_DIST = simd/jsimdcpu.asm \
                        simd/jfdctflt-3dn.asm \

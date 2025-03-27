@@ -3,20 +3,21 @@ def applicationName = "ComittoNxA"
 def versionMajor = 1
 def versionMinor = 65
 def versionPatch = 20
-def revision = "A"
+def revision = "B"
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion '29.0.2'
+    compileSdkVersion 33
+    buildToolsVersion '33.0.2'
     defaultConfig {
         applicationId "jp.dip.muracoro.comittona"
-        minSdkVersion 9
-        targetSdkVersion 9  // 30にしたらページ選択のサムネイルが動かなかった
+        minSdkVersion 14
+        targetSdkVersion 33  // 30にしたらページ選択のサムネイルが動かなかった
         versionCode versionMajor * 10000 + versionMinor * 100 + versionPatch
         versionName "${versionMajor}.${versionMinor}${revision}${versionPatch}"
         multiDexEnabled true    // メソッド数が65535を超えてもビルド可能にする
         ndk {
-            abiFilters "armeabi-v7a", "x86"    // ARM 32bit と x86 32bit でC++をメイクする
+            //abiFilters "arm64-v8a",  "x86_64"    // ARM 64bit と x86 64bit でC++をメイクする
+            abiFilters "arm64-v8a" // ARM 64bitのみでC++をメイクする
         }
     }
     applicationVariants.all { variant ->
@@ -71,8 +72,8 @@ dependencies {
 
     // SDカード書き込み用 Android サポートライブラリ
     // 古いバージョンを採用することで、minSdkVersionを最小に抑える
-    implementation 'com.android.support:support-compat:24.2.1'
-    implementation 'com.android.support:appcompat-v7:24.2.1'
+    implementation 'com.android.support:support-compat:27.1.1'
+    implementation 'com.android.support:appcompat-v7:27.1.1'
     // SVGファイル(アイコン表示用)
     implementation 'com.caverock:androidsvg-aar:1.4'
     // PDF
