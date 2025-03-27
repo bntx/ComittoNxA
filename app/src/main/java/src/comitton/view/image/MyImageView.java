@@ -437,9 +437,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 				// 前後のページを淡く表示するためのグラデーション色
 				int colors[] = {
-						0x88000000 | (mMgnColor & 0x00FFFFFF),
-						0xCC000000 | (mMgnColor & 0x00FFFFFF),
-						0xEE000000 | (mMgnColor & 0x00FFFFFF),
+						0xFF000000 | (mMgnColor & 0x00FFFFFF),
+						0xFF000000 | (mMgnColor & 0x00FFFFFF),
+						0xFF000000 | (mMgnColor & 0x00FFFFFF),
 						0xFF000000 | (mMgnColor & 0x00FFFFFF)};
 
 				Canvas bmpCanvas = new Canvas(mCanvasBitmap);
