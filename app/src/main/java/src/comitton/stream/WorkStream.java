@@ -163,19 +163,34 @@ public class WorkStream extends InputStream {
 
 	@Override
 	public void close() throws IOException {
-		if (mJcifsFile != null) {
-// 閲覧終了時に固まるのでコメントアウト
-//			mJcifsFile.close();
-			mJcifsFile = null;
+		Thread t = new Thread(() -> {
+			try {
+				if (mJcifsFile != null) {
+					// 閲覧終了時に固まるのでコメントアウト
+					//			mJcifsFile.close();
+					mJcifsFile = null;
+				}
+				if (mSmbjFile != null) {
+					mSmbjFile.close();
+					mSmbjFile = null;
+				}
+				if (mLocalFile != null) {
+					mLocalFile.close();
+					mLocalFile = null;
+				}
+
+			} catch ( Exception e ) {
+				e.printStackTrace();
+			}
+		}) ;
+
+		t.start();
+		try {
+			t.join();
+		} catch ( Exception e ) {
+			e.printStackTrace();
 		}
-		if (mSmbjFile != null) {
-			mSmbjFile.close();
-			mSmbjFile = null;
-		}
-		if (mLocalFile != null) {
-			mLocalFile.close();
-			mLocalFile = null;
-		}
+
 	}
 
 }

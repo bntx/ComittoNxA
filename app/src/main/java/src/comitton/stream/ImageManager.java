@@ -2478,14 +2478,8 @@ public class ImageManager extends InputStream implements Runnable {
 
 	public void cmpClose() throws IOException {
 		if (mWorkStream != null) {
-			new Thread(() -> {
-				try {
-					mWorkStream.close();
-					mWorkStream = null;
-				} catch ( Exception e ) {
-					e.printStackTrace();
-				}
-			}).start();
+			mWorkStream.close();
+			mWorkStream = null;
 		}
 //		if (mSambaRnd != null) {
 //// 閲覧終了時に固まるのでコメントアウト
