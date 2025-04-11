@@ -563,6 +563,18 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 			Toast.makeText(this, "This file cannot be modified.", Toast.LENGTH_SHORT).show();
 			return false;
 		}
+
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+			Log.i("startStorageAccessIntent", "check isExternalStorageManager()");
+
+			if (!Environment.isExternalStorageManager()) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                Uri uri = Uri.fromParts("package", getPackageName(), null);
+                intent.setData(uri);
+                startActivityForResult(intent, REQUEST_MANAGE_EXTERNAL_STORAGE);
+			}
+		}
+
 		return true;
 	}
 
@@ -632,6 +644,13 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 				setThumb(uri);
 			}
 			loadThumbnail();
+		}
+		else if (requestCode == REQUEST_MANAGE_EXTERNAL_STORAGE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                !Environment.isExternalStorageManager()) {
+                Toast.makeText(this, "アクセス許可が必要です", Toast.LENGTH_SHORT).show();
+            }
+
 		}
 		else {
 			// 履歴の内容を更新する
