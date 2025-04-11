@@ -461,10 +461,10 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 			Log.i("StorageAccessCheck", "check isExternalStorageManager()");
 
 			if (!Environment.isExternalStorageManager()) {
-				Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+				Intent permissionIntent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
 				Uri uri = Uri.fromParts("package", getPackageName(), null);
-				intent.setData(uri);
-				startActivityForResult(intent, REQUEST_MANAGE_EXTERNAL_STORAGE);
+				permissionIntent.setData(uri);
+				startActivityForResult(permissionIntent, REQUEST_MANAGE_EXTERNAL_STORAGE);
 			}
 
 		} else {
