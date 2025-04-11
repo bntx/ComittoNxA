@@ -457,7 +457,21 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 //			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_CODE);
 //		}
 
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+			Log.i("StorageAccessCheck", "check isExternalStorageManager()");
 
+			if (!Environment.isExternalStorageManager()) {
+				Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+				Uri uri = Uri.fromParts("package", getPackageName(), null);
+				intent.setData(uri);
+				startActivityForResult(intent, REQUEST_MANAGE_EXTERNAL_STORAGE);
+			}
+
+		} else {
+			Log.i("StorageAccessCheck", "< android.os.Build.VERSION_CODES.R");
+		}
+
+		
 		// 前回起動時のバージョン取得
 		String prevVerName = mSharedPreferences.getString("LastVer", null);
 		if (prevVerName == null || !prevVerName.equals(verName)) {
@@ -562,17 +576,6 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 		} else {
 			Toast.makeText(this, "This file cannot be modified.", Toast.LENGTH_SHORT).show();
 			return false;
-		}
-
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-			Log.i("startStorageAccessIntent", "check isExternalStorageManager()");
-
-			if (!Environment.isExternalStorageManager()) {
-                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                Uri uri = Uri.fromParts("package", getPackageName(), null);
-                intent.setData(uri);
-                startActivityForResult(intent, REQUEST_MANAGE_EXTERNAL_STORAGE);
-			}
 		}
 
 		return true;
