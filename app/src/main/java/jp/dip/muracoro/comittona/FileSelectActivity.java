@@ -79,6 +79,7 @@ import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
 import android.provider.DocumentsContract;
 import android.provider.DocumentsContract.Document;
+import android.provider.Settings;
 import android.support.v4.provider.DocumentFile;
 import android.text.InputType;
 import android.util.Log;
@@ -456,7 +457,21 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 //			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_CODE);
 //		}
 
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+			Log.i("StorageAccessCheck", "check isExternalStorageManager()");
 
+			if (!Environment.isExternalStorageManager()) {
+				Intent permissionIntent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+				Uri uri = Uri.fromParts("package", getPackageName(), null);
+				permissionIntent.setData(uri);
+				startActivityForResult(permissionIntent, REQUEST_MANAGE_EXTERNAL_STORAGE);
+			}
+
+		} else {
+			Log.i("StorageAccessCheck", "< android.os.Build.VERSION_CODES.R");
+		}
+
+		
 		// 前回起動時のバージョン取得
 		String prevVerName = mSharedPreferences.getString("LastVer", null);
 		if (prevVerName == null || !prevVerName.equals(verName)) {
@@ -535,11 +550,10 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 	public static final int WRITE_REQUEST_CODE = 43;
 	public static final int OPEN_REQUEST_CODE = 44;
 	public static final int REQUEST_SDCARD_ACCESS = 2;
+	private static final int REQUEST_MANAGE_EXTERNAL_STORAGE = 1001;
 
 	//	@TargetApi(24)
 	public boolean startStorageAccessIntent(File file, int requestCode){
-		Intent intent = null;
-
 		mStorageManager = (StorageManager)mActivity.getSystemService(Context.STORAGE_SERVICE);
 		StorageVolume volume = null;
 		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
@@ -551,18 +565,19 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 			//SDカード以下のアクセス権限を付与してもらう
 			if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
 				// Android 10.0 以上なら
-				intent = volume.createOpenDocumentTreeIntent();
+				Intent intent = volume.createOpenDocumentTreeIntent();
 				startActivityForResult(intent, requestCode);
 			}
 			else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 				// Android 7 以上なら
-				intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+				Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 				startActivityForResult(intent, REQUEST_SDCARD_ACCESS);
 			}
 		} else {
 			Toast.makeText(this, "This file cannot be modified.", Toast.LENGTH_SHORT).show();
 			return false;
 		}
+
 		return true;
 	}
 
@@ -632,6 +647,13 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 				setThumb(uri);
 			}
 			loadThumbnail();
+		}
+		else if (requestCode == REQUEST_MANAGE_EXTERNAL_STORAGE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                !Environment.isExternalStorageManager()) {
+                Toast.makeText(this, "アクセス許可が必要です", Toast.LENGTH_SHORT).show();
+            }
+
 		}
 		else {
 			// 履歴の内容を更新する
