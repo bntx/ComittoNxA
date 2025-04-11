@@ -535,11 +535,10 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 	public static final int WRITE_REQUEST_CODE = 43;
 	public static final int OPEN_REQUEST_CODE = 44;
 	public static final int REQUEST_SDCARD_ACCESS = 2;
+	private static final int REQUEST_MANAGE_EXTERNAL_STORAGE = 1001;
 
 	//	@TargetApi(24)
 	public boolean startStorageAccessIntent(File file, int requestCode){
-		Intent intent = null;
-
 		mStorageManager = (StorageManager)mActivity.getSystemService(Context.STORAGE_SERVICE);
 		StorageVolume volume = null;
 		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
@@ -551,12 +550,12 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 			//SDカード以下のアクセス権限を付与してもらう
 			if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
 				// Android 10.0 以上なら
-				intent = volume.createOpenDocumentTreeIntent();
+				Intent intent = volume.createOpenDocumentTreeIntent();
 				startActivityForResult(intent, requestCode);
 			}
 			else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 				// Android 7 以上なら
-				intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+				Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 				startActivityForResult(intent, REQUEST_SDCARD_ACCESS);
 			}
 		} else {
