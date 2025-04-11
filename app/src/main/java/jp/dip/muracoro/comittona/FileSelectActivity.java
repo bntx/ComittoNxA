@@ -79,6 +79,7 @@ import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
 import android.provider.DocumentsContract;
 import android.provider.DocumentsContract.Document;
+import android.provider.Settings;
 import android.support.v4.provider.DocumentFile;
 import android.text.InputType;
 import android.util.Log;
