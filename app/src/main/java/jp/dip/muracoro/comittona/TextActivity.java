@@ -75,7 +75,6 @@ import android.widget.Toast;
  */
 @SuppressLint("NewApi")
 public class TextActivity extends Activity implements OnTouchListener, Handler.Callback, MenuSelectListener, PageSelectListener,  BookmarkListenerInterface {
-	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 	//
 	private static final int TIME_VIB_TERM = 20;
 	private static final int TIME_VIB_RANGE = 30;
@@ -359,7 +358,7 @@ public class TextActivity extends Activity implements OnTouchListener, Handler.C
 			// 通知領域非表示
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		}
-		if (mImmEnable && mSdkVersion >= 19) {
+		if (mImmEnable) {
 			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 			uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 			uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -510,7 +509,7 @@ public class TextActivity extends Activity implements OnTouchListener, Handler.C
 		mReadDialog.setOnShowListener(new DialogInterface.OnShowListener() {
 			@Override
 			public void onShow(DialogInterface dialog) {
-				if (mImmEnable && mSdkVersion >= 19) {
+				if (mImmEnable) {
 					int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 					uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 					uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -582,7 +581,7 @@ public class TextActivity extends Activity implements OnTouchListener, Handler.C
 	public void onRestart(){
 		super.onRestart();
 		// IMM
-		if (mImmEnable && mSdkVersion >= 19) {
+		if (mImmEnable) {
 			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 			uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 			uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -697,7 +696,7 @@ public class TextActivity extends Activity implements OnTouchListener, Handler.C
 		}
 
 		if (hasFocus) {
-			if (mImmEnable && mSdkVersion >= 19) {
+			if (mImmEnable) {
 				int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -840,7 +839,7 @@ public class TextActivity extends Activity implements OnTouchListener, Handler.C
 			// プログレスダイアログを表示
 			synchronized (this) {
 				if (mReadDialog != null) {
-					if (mImmEnable && mSdkVersion >= 19) {
+					if (mImmEnable) {
 						mReadDialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
 						mReadDialog.show();
 						mReadDialog.getWindow().getDecorView().setSystemUiVisibility(this.getWindow().getDecorView().getSystemUiVisibility());
@@ -2276,7 +2275,7 @@ public class TextActivity extends Activity implements OnTouchListener, Handler.C
 
 	// テキストを再読み込み
 	private void reloadText() {
-		if (mImmEnable && mSdkVersion >= 19) {
+		if (mImmEnable) {
 			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 			uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 			uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -2312,7 +2311,7 @@ public class TextActivity extends Activity implements OnTouchListener, Handler.C
 				mTerminate = true;
 			}
 		});
-		if (mImmEnable && mSdkVersion >= 19) {
+		if (mImmEnable) {
 			mReadDialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
 			mReadDialog.show();
 			mReadDialog.getWindow().getDecorView().setSystemUiVisibility(this.getWindow().getDecorView().getSystemUiVisibility());
@@ -2344,13 +2343,7 @@ public class TextActivity extends Activity implements OnTouchListener, Handler.C
 		mCenter = SetImageTextDetailActivity.getCenter(sharedPreferences);
 		mShadow = SetImageTextDetailActivity.getGradation(sharedPreferences);
 		mMargin = SetImageTextDetailActivity.getMargin(sharedPreferences);
-		if (mSdkVersion >= 19) {
-			// KitKat以降のみ設定読み込み
-			mImmEnable = SetImageTextDetailActivity.getImmEnable(sharedPreferences);
-		}
-		else {
-			mImmEnable = false;
-		}
+		mImmEnable = SetImageTextDetailActivity.getImmEnable(sharedPreferences);
 		mOldMenu = SetImageTextDetailActivity.getOldMenu(sharedPreferences);
 		mBottomFile = SetImageTextDetailActivity.getBottomFile(sharedPreferences);
 		mPinchEnable = SetImageTextDetailActivity.getPinchEnable(sharedPreferences);
@@ -2402,7 +2395,7 @@ public class TextActivity extends Activity implements OnTouchListener, Handler.C
 			if (mTextView != null) {
 				int cx;
 				int cy;
-				if (mSdkVersion >= 19 && mImmEnable) {
+				if (mImmEnable) {
 					// ウィンドウマネージャのインスタンス取得
 					WindowManager wm = (WindowManager)getSystemService(WINDOW_SERVICE);
 					// ディスプレイのインスタンス生成

@@ -119,8 +119,6 @@ public class ImageActivity extends Activity implements OnTouchListener, Handler.
 	private static final int LONGTAP_TIMER_UI = 400;
 	private static final int LONGTAP_TIMER_BTM = 400;
 
-	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
-
 	private final int COMMAND_ID[] =
 	{
 		DEF.MENU_ROTATE,	// 画面方向
@@ -668,7 +666,7 @@ public class ImageActivity extends Activity implements OnTouchListener, Handler.
 		mReadDialog.setOnShowListener(new DialogInterface.OnShowListener() {
 			@Override
 			public void onShow(DialogInterface dialog) {
-				if (mImmEnable && mSdkVersion >= 19) {
+				if (mImmEnable) {
 					int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 					uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 					uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -753,7 +751,7 @@ public class ImageActivity extends Activity implements OnTouchListener, Handler.
 	public void onRestart(){
 		super.onRestart();
 		// IMM
-		if (mImmEnable && mSdkVersion >= 19) {
+		if (mImmEnable) {
 			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 			uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 			uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -826,7 +824,7 @@ public class ImageActivity extends Activity implements OnTouchListener, Handler.
 		}
 
 		if (hasFocus) {
-			if (mImmEnable && mSdkVersion >= 19) {
+			if (mImmEnable) {
                 int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
                 uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
                 uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -1038,7 +1036,7 @@ public class ImageActivity extends Activity implements OnTouchListener, Handler.
 				if (mReadTimerMsg == msg) {
 					// プログレスダイアログを表示
 					if (mReadDialog != null) {
-						if (mImmEnable && mSdkVersion >= 19) {
+						if (mImmEnable) {
 							mReadDialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
 							mReadDialog.show();
 							mReadDialog.getWindow().getDecorView().setSystemUiVisibility(this.getWindow().getDecorView().getSystemUiVisibility());
@@ -2428,7 +2426,7 @@ public class ImageActivity extends Activity implements OnTouchListener, Handler.
 								break;
 							case 10:
 								// 設定画面に遷移
-								if (mImmEnable && mSdkVersion >= 19) {
+								if (mImmEnable) {
 									int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 									uiOptions &= ~(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 									getWindow().getDecorView().setSystemUiVisibility(uiOptions);
@@ -3330,7 +3328,7 @@ public class ImageActivity extends Activity implements OnTouchListener, Handler.
 			}
 			case DEF.MENU_SETTING: {
 				// 設定画面に遷移
-				if (mImmEnable && mSdkVersion >= 19) {
+				if (mImmEnable) {
 					int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 					uiOptions &= ~(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 					getWindow().getDecorView().setSystemUiVisibility(uiOptions);
@@ -3555,7 +3553,7 @@ public class ImageActivity extends Activity implements OnTouchListener, Handler.
 
 			ReadSetting(sharedPreferences);
 
-			if (mImmEnable && mSdkVersion >= 19) {
+			if (mImmEnable) {
 				int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -3632,13 +3630,7 @@ public class ImageActivity extends Activity implements OnTouchListener, Handler.
 				mShadow = 0;
 			}
 			mMargin = SetImageTextDetailActivity.getMargin(sharedPreferences);
-			if (mSdkVersion >= 19) {
-				// KitKat以降のみ設定読み込み
-				mImmEnable = SetImageTextDetailActivity.getImmEnable(sharedPreferences);
-			}
-			else {
-				mImmEnable = false;
-			}
+			mImmEnable = SetImageTextDetailActivity.getImmEnable(sharedPreferences);
 			mOldMenu = SetImageTextDetailActivity.getOldMenu(sharedPreferences);
 			mBottomFile = SetImageTextDetailActivity.getBottomFile(sharedPreferences);
 			mPinchEnable = SetImageTextDetailActivity.getPinchEnable(sharedPreferences);
@@ -4240,10 +4232,7 @@ public class ImageActivity extends Activity implements OnTouchListener, Handler.
 
 	private String getMemoryString() {
 		int memoryClass = ((ActivityManager) getSystemService(ACTIVITY_SERVICE)).getMemoryClass();
-		int largeMemoryClass = 0;
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB) {
-			largeMemoryClass = ((ActivityManager) getSystemService(ACTIVITY_SERVICE)).getLargeMemoryClass();
-		}
+		int largeMemoryClass = ((ActivityManager) getSystemService(ACTIVITY_SERVICE)).getLargeMemoryClass();
 
 		// メモリ情報を取得
 		ActivityManager activityManager = (ActivityManager)getSystemService(ACTIVITY_SERVICE);

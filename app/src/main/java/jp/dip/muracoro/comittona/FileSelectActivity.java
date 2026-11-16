@@ -49,7 +49,6 @@ import src.comitton.view.list.TitleArea;
 import jcifs.smb.SmbFile;
 //import jp.dip.muracoro.comittona.R;
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -80,7 +79,6 @@ import android.preference.PreferenceManager;
 import android.provider.DocumentsContract;
 import android.provider.DocumentsContract.Document;
 import android.provider.Settings;
-import android.support.v4.provider.DocumentFile;
 import android.text.InputType;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -108,8 +106,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Point;
 
 import android.Manifest;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 
 @SuppressLint("DefaultLocale")
 public class FileSelectActivity extends Activity implements OnTouchListener, ListNoticeListener, BookmarkListenerInterface, Handler.Callback {
@@ -444,31 +440,26 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 
 
 		//==== パーミッション承認状態判定(書き込み) ====//
-		if (ContextCompat.checkSelfPermission(mActivity, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+		if (mActivity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
 		{
 			//==== 承認要求を行う ====//
-			ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE);
+			mActivity.requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE);
 		}
 
 		//		//==== パーミッション承認状態判定(マイク使用) ====//
-//		if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+//		if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
 //		{
 //			//==== 承認要求を行う ====//
-//			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_CODE);
+//			requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_CODE);
 //		}
 
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-			Log.i("StorageAccessCheck", "check isExternalStorageManager()");
+		Log.i("StorageAccessCheck", "check isExternalStorageManager()");
 
-			if (!Environment.isExternalStorageManager()) {
-				Intent permissionIntent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-				Uri uri = Uri.fromParts("package", getPackageName(), null);
-				permissionIntent.setData(uri);
-				startActivityForResult(permissionIntent, REQUEST_MANAGE_EXTERNAL_STORAGE);
-			}
-
-		} else {
-			Log.i("StorageAccessCheck", "< android.os.Build.VERSION_CODES.R");
+		if (!Environment.isExternalStorageManager()) {
+			Intent permissionIntent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+			Uri uri = Uri.fromParts("package", getPackageName(), null);
+			permissionIntent.setData(uri);
+			startActivityForResult(permissionIntent, REQUEST_MANAGE_EXTERNAL_STORAGE);
 		}
 
 		
@@ -552,27 +543,15 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 	public static final int REQUEST_SDCARD_ACCESS = 2;
 	private static final int REQUEST_MANAGE_EXTERNAL_STORAGE = 1001;
 
-	//	@TargetApi(24)
 	public boolean startStorageAccessIntent(File file, int requestCode){
 		mStorageManager = (StorageManager)mActivity.getSystemService(Context.STORAGE_SERVICE);
-		StorageVolume volume = null;
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-			volume = mStorageManager.getStorageVolume(file);
-			// ルートの場合はnullになる
-		}
+		// ルートの場合はnullになる
+		StorageVolume volume = mStorageManager.getStorageVolume(file);
 
 		if (volume != null) {
 			//SDカード以下のアクセス権限を付与してもらう
-			if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-				// Android 10.0 以上なら
-				Intent intent = volume.createOpenDocumentTreeIntent();
-				startActivityForResult(intent, requestCode);
-			}
-			else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-				// Android 7 以上なら
-				Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-				startActivityForResult(intent, REQUEST_SDCARD_ACCESS);
-			}
+			Intent intent = volume.createOpenDocumentTreeIntent();
+			startActivityForResult(intent, requestCode);
 		} else {
 			Toast.makeText(this, "This file cannot be modified.", Toast.LENGTH_SHORT).show();
 			return false;
@@ -604,32 +583,28 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 					e.printStackTrace();
 				}
 
-				if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-					// Android 7 以上なら
+				// 恒常的にPermissionを取得する。
+				Log.d("FileSelectActivity", "onActivityResult 恒常的にパーミッションを保存します。");
+				mActivity.getContentResolver().takePersistableUriPermission(treeUri,
+						Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 
-					// 恒常的にPermissionを取得する。
-					Log.d("FileSelectActivity", "onActivityResult 恒常的にパーミッションを保存します。");
-					mActivity.getContentResolver().takePersistableUriPermission(treeUri,
-							Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+				// Permissionを取ったURIをアプリの設定に保存する
+				File file = new File(mServer.getPath(ServerSelect.INDEX_LOCAL));
+				// ボリュームのマウントされたフォルダを取得する
+				String baseFolder = FileAccess.getExtSdCardFolder(file);
 
-					// Permissionを取ったURIをアプリの設定に保存する
-					File file = new File(mServer.getPath(ServerSelect.INDEX_LOCAL));
-					// ボリュームのマウントされたフォルダを取得する
-					String baseFolder = FileAccess.getExtSdCardFolder(file);
-
-					// ユーザがアクセス許可したサブディレクトリを取得する
-					int idx = treeUriDecodeString.indexOf(":", 8);
-					if (idx > 0 && idx < treeUriDecodeString.length() - 1) {
-						baseFolder = baseFolder + "/" + treeUriDecodeString.substring(idx + 1); 
-					}
-					Log.d("FileSelectActivity", "onActivityResult result=OK baseFolder=" + baseFolder);
-
-					
-					// ボリュームのtreeUriを保存する
-					Editor ed = mSharedPreferences.edit();
-					ed.putString("permit-uri:" + baseFolder, treeUri.toString());
-					ed.commit();
+				// ユーザがアクセス許可したサブディレクトリを取得する
+				int idx = treeUriDecodeString.indexOf(":", 8);
+				if (idx > 0 && idx < treeUriDecodeString.length() - 1) {
+					baseFolder = baseFolder + "/" + treeUriDecodeString.substring(idx + 1); 
 				}
+				Log.d("FileSelectActivity", "onActivityResult result=OK baseFolder=" + baseFolder);
+
+				
+				// ボリュームのtreeUriを保存する
+				Editor ed = mSharedPreferences.edit();
+				ed.putString("permit-uri:" + baseFolder, treeUri.toString());
+				ed.commit();
 
 				onCreateDialog(mCommand);
 			}
@@ -649,8 +624,7 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 			loadThumbnail();
 		}
 		else if (requestCode == REQUEST_MANAGE_EXTERNAL_STORAGE) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-                !Environment.isExternalStorageManager()) {
+            if (!Environment.isExternalStorageManager()) {
                 Toast.makeText(this, "アクセス許可が必要です", Toast.LENGTH_SHORT).show();
             }
 
@@ -1197,9 +1171,9 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 			case DEF.MESSAGE_FILE_DELETE:
 
 				//==== パーミッション承認状態判定(書き込み) ====//
-				if (ContextCompat.checkSelfPermission(mActivity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+				if (mActivity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 					//==== 承認要求を行う ====//
-					ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
+					mActivity.requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
 				}
 
 				file = new File(mPath + mFileData.getName());
@@ -1296,9 +1270,9 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 				break;
 			case DEF.MESSAGE_DOWNLOAD:
 				//==== パーミッション承認状態判定(書き込み) ====//
-				if (ContextCompat.checkSelfPermission(mActivity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+				if (mActivity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 					//==== 承認要求を行う ====//
-					ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
+					mActivity.requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
 				}
 
 				file = new File(mServer.getPath(ServerSelect.INDEX_LOCAL));
@@ -1359,30 +1333,15 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 						}
 
 						// ショートカットをHOMEに作成する
-						if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-							// Android 8 O API26 以降  
-							Icon icon = Icon.createWithResource(mActivity, R.drawable.icon);
-							ShortcutInfo shortcut = new ShortcutInfo.Builder(mActivity, title)
-									.setShortLabel(title)
-									.setLongLabel(title)
-									.setIcon(icon)
-									.setIntent(shortcutIntent)
-									.build();
-							ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
-							shortcutManager.requestPinShortcut(shortcut, null); // フツーのショートカット  
-							// shortcutManager.addDynamicShortcuts(Arrays.asList(shortcut)); // ダイナミックショートカット  
-						}
-						else {
-							// Android 7以前  
-							Intent intent = new Intent();
-
-							intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-							intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
-							Parcelable iconResource = Intent.ShortcutIconResource.fromContext(mActivity, R.drawable.icon);
-							intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, iconResource);
-							intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-							sendBroadcast(intent);
-						}
+						Icon icon = Icon.createWithResource(mActivity, R.drawable.icon);
+						ShortcutInfo shortcut = new ShortcutInfo.Builder(mActivity, title)
+								.setShortLabel(title)
+								.setLongLabel(title)
+								.setIcon(icon)
+								.setIntent(shortcutIntent)
+								.build();
+						ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
+						shortcutManager.requestPinShortcut(shortcut, null); // フツーのショートカット
 					}
 				});
 				dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -1433,9 +1392,9 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 			case DEF.MESSAGE_FILE_RENAME: {
 
 				//==== パーミッション承認状態判定(書き込み) ====//
-				if (ContextCompat.checkSelfPermission(mActivity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+				if (mActivity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 					//==== 承認要求を行う ====//
-					ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
+					mActivity.requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
 				}
 
 				file = new File(mPath + mFileData.getName());

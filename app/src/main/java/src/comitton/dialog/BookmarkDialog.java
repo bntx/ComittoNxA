@@ -96,10 +96,8 @@ public class BookmarkDialog extends Dialog implements OnClickListener {
 	 */
 	@SuppressLint("NewApi")
 	private void copySystemUiVisibility() {
-	    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-	        getWindow().getDecorView().setSystemUiVisibility(
-	                mContext.getWindow().getDecorView().getSystemUiVisibility());
-	    }
+		getWindow().getDecorView().setSystemUiVisibility(
+				mContext.getWindow().getDecorView().getSystemUiVisibility());
 	}
 
 	public void setBookmarkListear(BookmarkListenerInterface listener) {
