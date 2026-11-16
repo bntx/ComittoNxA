@@ -11,8 +11,6 @@ import java.io.RandomAccessFile;
 import src.comitton.common.DEF;
 import src.comitton.common.FileAccess;
 
-import jcifs.smb.SmbRandomAccessFile;
-
 public class WorkStream extends InputStream {
 	public static final int OFFSET_LCL_FNAME_LEN = 26;
 	public static final int SIZE_LOCALHEADER = 30;
@@ -21,7 +19,6 @@ public class WorkStream extends InputStream {
 	private String mPath;
 	private String mUser;
 	private String mPass;
-	private SmbRandomAccessFile mJcifsFile;
 	private RandomAccessFile mLocalFile;
 	private com.hierynomus.smbj.share.File mSmbjFile;
 	private long mPos;
@@ -34,12 +31,7 @@ public class WorkStream extends InputStream {
 		mPass = pass;
 		mZipFlag = zipflag;
 		if (uri != null && uri.length() > 0) {
-			if (FileAccess.getSmbMode() == FileAccess.SMBLIB_JCIFS) {
-				mJcifsFile = FileAccess.jcifsAccessFile(uri + path, user, pass);
-			}
-			else if (FileAccess.getSmbMode() == FileAccess.SMBLIB_SMBJ) {
-				mSmbjFile = FileAccess.smbjAccessFile(uri + path, user, pass);
-			}
+			mSmbjFile = FileAccess.smbjAccessFile(uri + path, user, pass);
 		}
 		else {
 			mLocalFile = new RandomAccessFile(path, "r");
@@ -49,11 +41,7 @@ public class WorkStream extends InputStream {
 
 	private void Open(String uri, String path, String user, String pass, boolean zipflag) throws IOException {
 		if (uri != null && uri.length() > 0) {
-			if (FileAccess.getSmbMode() == FileAccess.SMBLIB_JCIFS) {
-				mJcifsFile = FileAccess.jcifsAccessFile(uri + path, user, pass);
-			} else if (FileAccess.getSmbMode() == FileAccess.SMBLIB_SMBJ) {
-				mSmbjFile = FileAccess.smbjAccessFile(uri + path, user, pass);
-			}
+			mSmbjFile = FileAccess.smbjAccessFile(uri + path, user, pass);
 		} else {
 			mLocalFile = new RandomAccessFile(path, "r");
 		}
@@ -62,11 +50,7 @@ public class WorkStream extends InputStream {
 	public void seek(long pos) throws IOException {
 		try {
 			if (mURI != null && mURI.length() > 0) {
-				if (FileAccess.getSmbMode() == FileAccess.SMBLIB_JCIFS) {
-					mJcifsFile.seek(pos);
-				} else if (FileAccess.getSmbMode() == FileAccess.SMBLIB_SMBJ) {
-					//
-				}
+				//
 			} else {
 				mLocalFile.seek(pos);
 			}
@@ -81,11 +65,7 @@ public class WorkStream extends InputStream {
 	public long getFilePointer() throws IOException {
 		try {
 			if (mURI != null && mURI.length() > 0) {
-				if (FileAccess.getSmbMode() == FileAccess.SMBLIB_JCIFS) {
-					return mJcifsFile.getFilePointer();
-				} else if (FileAccess.getSmbMode() == FileAccess.SMBLIB_SMBJ) {
-					return mPos;
-				}
+				return mPos;
 			} else {
 				return mLocalFile.getFilePointer();
 			}
@@ -101,12 +81,7 @@ public class WorkStream extends InputStream {
 	public long length() throws IOException {
 		try {
 			if (mURI != null && mURI.length() > 0) {
-				if (FileAccess.getSmbMode() == FileAccess.SMBLIB_JCIFS) {
-					return mJcifsFile.length();
-				}
-				else if (FileAccess.getSmbMode() == FileAccess.SMBLIB_SMBJ) {
-					return mSmbjFile.getFileInformation(FileStandardInformation.class).getEndOfFile();
-				}
+				return mSmbjFile.getFileInformation(FileStandardInformation.class).getEndOfFile();
 			}
 			else {
 				return mLocalFile.length();
@@ -117,7 +92,6 @@ public class WorkStream extends InputStream {
 			seek(mPos);
 			return length();
 		}
-		return 0;
 	}
 
 	@Override
@@ -130,11 +104,7 @@ public class WorkStream extends InputStream {
 		int ret = 0;
 		try {
 			if (mURI != null && mURI.length() > 0) {
-				if (FileAccess.getSmbMode() == FileAccess.SMBLIB_JCIFS) {
-					ret = mJcifsFile.read(buf, off, size);
-				} else if (FileAccess.getSmbMode() == FileAccess.SMBLIB_SMBJ) {
-					ret = mSmbjFile.read(buf, mPos, off, size);
-				}
+				ret = mSmbjFile.read(buf, mPos, off, size);
 			} else {
 				ret = mLocalFile.read(buf, off, size);
 			}
@@ -165,11 +135,6 @@ public class WorkStream extends InputStream {
 	public void close() throws IOException {
 		Thread t = new Thread(() -> {
 			try {
-				if (mJcifsFile != null) {
-					// 閲覧終了時に固まるのでコメントアウト
-					//			mJcifsFile.close();
-					mJcifsFile = null;
-				}
 				if (mSmbjFile != null) {
 					mSmbjFile.close();
 					mSmbjFile = null;

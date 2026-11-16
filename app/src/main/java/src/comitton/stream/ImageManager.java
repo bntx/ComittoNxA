@@ -23,7 +23,6 @@ import src.comitton.pdf.PDFManager;
 import src.comitton.pdf.PdfInputStream;
 import src.comitton.pdf.data.PdfCrypt;
 
-import jcifs.smb.SmbRandomAccessFile;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
@@ -2302,7 +2301,6 @@ public class ImageManager extends InputStream implements Runnable {
 
 	/*************************** CompressAccess ***************************/
 	private WorkStream mWorkStream;
-	private SmbRandomAccessFile mSambaRnd;
 	private RandomAccessFile mLocalRnd;
 //	private WebDAVRandomAccessFile mWebDAVRnd;
 	private int mCmpSize;

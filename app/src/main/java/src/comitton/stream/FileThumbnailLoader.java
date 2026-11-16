@@ -2,7 +2,6 @@ package src.comitton.stream;
 
 import java.util.ArrayList;
 
-import jcifs.smb.SmbException;
 import src.comitton.common.DEF;
 import src.comitton.common.FileAccess;
 import src.comitton.common.ImageAccess;
@@ -361,11 +360,7 @@ public class FileThumbnailLoader extends ThumbnailLoader implements Runnable {
 			// ディレクトリの場合は中のファイルを参照
 			if (filename.endsWith("/")) {
 				Log.d("FileThumbnailLoader","index=" + index + " " + (firstloop ? 1 : 2) + "周目 loadBitmap2 ディレクトリの中を検索します。");
-				try {
-					infile = FileAccess.listFiles(mUri + mPath + filename, mUser, mPass);
-				} catch (SmbException e) {
-					e.printStackTrace();
-				}
+				infile = FileAccess.listFiles(mUri + mPath + filename, mUser, mPass);
 
 				if (infile.size() == 0) {
 					Log.d("FileThumbnailLoader","index=" + index + " " + (firstloop ? 1 : 2) + "周目 loadBitmap2 ディレクトリの中は空でした。");

@@ -10,7 +10,7 @@ public class MODULE {
 	public static final String ABOUT_INFO = "\nLast Update : 2020/10/23\n  Version 1.65A20\n\n"
 			+ "Special thanks!!\n  Icon Designed by Sigeyuki Koresawa\n\n\n"
 			+ "Using Library\n"
-			+ "  jcifs-ng 2.1.5 (LGPL v2.1)\n"
+			+ "  smbj 0.10.0 (Apache License 2.0)\n"
 			+ "  unrar 5.6.4\n"
 			+ "  mupdf 1.1 (GPL v3)\n"
 			+ "  libjpg-turbo\n"

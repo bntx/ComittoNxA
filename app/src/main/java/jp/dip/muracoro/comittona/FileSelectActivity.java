@@ -46,7 +46,6 @@ import src.comitton.view.list.ListNoticeListener;
 import src.comitton.view.list.ListScreenView;
 import src.comitton.view.list.RecordListArea;
 import src.comitton.view.list.TitleArea;
-import jcifs.smb.SmbFile;
 //import jp.dip.muracoro.comittona.R;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -825,10 +824,6 @@ public class FileSelectActivity extends Activity implements OnTouchListener, Lis
 		mSambaSave = SetRecorderActivity.getRecServer(mSharedPreferences);
 
 		mUseThumbnailTap = SetFileListActivity.getThumbnailTap(mSharedPreferences);	// サムネイルタップで長押しメニューの有効化フラグ
-
-		// SMBライブラリの設定
-		//Log.d("FileSelectActivity", "onCreate SmbMode=" + mSharedPreferences.getInt(DEF.KEY_SMBLIB, 1));
-		FileAccess.setSmbMode(SetCommonActivity.getSmbLib(mSharedPreferences));
 
 		if (mListRotaChg == false) {
 			// 手動で切り替えていない

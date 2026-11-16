@@ -10,7 +10,6 @@ import src.comitton.common.FileAccess;
 import src.comitton.data.FileData;
 import src.comitton.dialog.LoadingDialog;
 
-import jcifs.smb.SmbFile;
 
 import android.annotation.SuppressLint;
 import android.content.Context;

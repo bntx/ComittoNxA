@@ -48,14 +48,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import jcifs.CIFSContext;
-import jcifs.CIFSException;
-import jcifs.context.SingletonContext;
-import jcifs.smb.NtlmPasswordAuthenticator;
-import jcifs.smb.SmbException;
-import jcifs.smb.SmbFile;
-import jcifs.smb.SmbRandomAccessFile;
-
 import jp.dip.muracoro.comittona.FileSelectActivity;
 
 import src.comitton.data.FileData;
@@ -72,10 +64,6 @@ public class FileAccess {
 
 //	private static final int REQUEST_CODE = 1;
 
-	public static final int SMBLIB_JCIFS = 0;
-	public static final int SMBLIB_SMBJ = 1;
-
-	private static int SMBLIB = SMBLIB_SMBJ;
 	private static Session lastSmbjSession = null;
 	private static DiskShare lastSmbjShare = null;
 	private static String lastSessionHost = "";
@@ -88,14 +76,6 @@ public class FileAccess {
 
 	public static void setActivity(FileSelectActivity activity) {
 		mActivity = activity;
-	}
-
-	public static int getSmbMode() {
-		return SMBLIB;
-	}
-
-	public static void setSmbMode(int smblib) {
-		SMBLIB = smblib;
 	}
 
 	// Url文字列作成
@@ -117,111 +97,6 @@ public class FileAccess {
 		ret += "@" + url.substring(6);
 		return ret;
 	}
-
-//	// ユーザ認証付きSambaアクセス
-//	public static SmbFile jcifsFile(String url) throws MalformedURLException {
-//		String user = null;
-//		String pass = null;
-//
-//		// パラメタチェック
-//		if (url.indexOf("smb://") == 0) {
-//			int idx = url.indexOf("@");
-//			if (idx >= 0) {
-//				String userpass = url.substring(6, idx);
-//				idx = userpass.indexOf(":");
-//				if (idx >= 0) {
-//					user = userpass.substring(0, idx);
-//					user = URLDecoder.decode(user);
-//					pass = userpass.substring(idx + 1);
-//					pass = URLDecoder.decode(pass);
-//				}
-//				else {
-//					user = userpass;
-//					pass = "";
-//				}
-//			}
-//		}
-//		return jcifsFile(url, user, pass);
-//	}
-
-	// jcifs認証
-	public static SmbFile jcifsFile(String url, String user, String pass) throws MalformedURLException {
-		SmbFile sfile = null;
-		NtlmPasswordAuthenticator smbAuth;
-		CIFSContext context = null;
-		String domain = "";
-		String host = "";
-		String share = "";
-		String path = "";
-		int idx;
-
-//		// SMBの基本設定
-//		// SMB3はデバッグビルドでしか動作しない.
-          // 最適化が悪いと思われる(そのうち検証)
-		Properties prop = new Properties();
-		prop.setProperty("jcifs.smb.client.minVersion", "SMB1");
-		prop.setProperty("jcifs.smb.client.maxVersion", "SMB311"); // SMB1, SMB202, SMB210, SMB300, SMB302, SMB311
-		prop.setProperty("jcifs.traceResources", "true");
-//		prop.setProperty("jcifs.smb.lmCompatibility", "3");
-//		prop.setProperty("jcifs.smb.client.useExtendedSecuruty", "true");
-//		prop.setProperty("jcifs.smb.useRawNTLM", "true");
-//		prop.setProperty("jcifs.smb.client.signingPreferred", "true");
-//		prop.setProperty("jcifs.smb.client.useSMB2Negotiation", "true");
-//		prop.setProperty("jcifs.smb.client.ipcSigningEnforced", "true");
-//
-//		prop.setProperty("jcifs.smb.client.signingEnforced", "true");
-//		prop.setProperty("jcifs.smb.client.disableSpnegoIntegrity", "true");
-//
-		try {
-			// BaseContextではコネクションが足りなくなるため、SingletonContextを使用する
-//			Configuration config = new PropertyConfiguration(prop);
-//			context = new BaseContext(config);
-			SingletonContext.init(prop);
-		} catch (CIFSException e) {
-			Log.d("FileAccess", "jcifsFile " + e.getMessage());
-		}
-
-
-		host = url.substring(6);
-		idx = host.indexOf("/");
-		if (idx >= 0){
-			path = host.substring(idx + 1);
-			host = host.substring(0, idx);
-		}
-		idx = path.indexOf("/", 1);
-		if (idx >= 0){
-			share = path.substring(0, idx);
-			path = path.substring(idx);
-		}
-
-		if (user != null && user.length() != 0) {
-			idx = user.indexOf(";");
-			if (idx >= 0){
-				domain = user.substring(0, idx);
-				user = user.substring(idx + 1);
-			}
-		}
-
-		Log.d("FileAccess", "jcifsFile domain=" + domain + ", user=" + user + ", pass=" + pass + ", host=" + host + ", share=" + share + ", path=" + path);
-
-		if (domain != null && domain.length() != 0) {
-			smbAuth = new NtlmPasswordAuthenticator(domain, user, pass);
-			context = SingletonContext.getInstance().withCredentials(smbAuth);
-
-		} else if (user != null && user.length() != 0) {
-			smbAuth = new NtlmPasswordAuthenticator(user, pass);
-			context = SingletonContext.getInstance().withCredentials(smbAuth);
-
-		} else {
-			// Anonymousは動作しないのでGuestで代替する
-//			context = SingletonContext.getInstance().withAnonymousCredentials();
-			context = SingletonContext.getInstance().withGuestCrendentials();
-		}
-
-		sfile = new SmbFile(url, context);
-		return sfile;
-	}
-
 
 	// smbj認証
 	public static Session smbjSession(String host, String user, String pass) {
@@ -320,22 +195,6 @@ public class FileAccess {
 		lastSessionUser = user;
 		lastSessionPass = pass;
 		return smbjShare;
-	}
-
-	// ユーザ認証付きSambaストリーム
-	public static SmbRandomAccessFile jcifsAccessFile(String url, String user, String pass) throws IOException {
-		Log.d("FileAccess", "smbRandomAccessFile url=" + url + ", user=" + user + ", pass=" + pass);
-		SmbRandomAccessFile stream;
-		try {
-			if (!exists(url, user, pass)) {
-				throw new IOException("File not found.");
-			}
-		} catch (FileAccessException | IOException e) {
-			throw new IOException("File not found.");
-		}
-		SmbFile sfile = jcifsFile(url, user, pass);
-		stream = new SmbRandomAccessFile(sfile, "r");
-		return stream;
 	}
 
 	// smbjのInput
@@ -463,21 +322,7 @@ public class FileAccess {
 			File orgfile = new File(url);
 			result = orgfile.exists();
 		}
-		else if (SMBLIB == SMBLIB_JCIFS) {
-			// jcifsの場合
-			SmbFile orgfile;
-			try {
-				orgfile = FileAccess.jcifsFile(url, user, pass);
-			} catch (MalformedURLException e) {
-				throw new FileAccessException(e);
-			}
-			try {
-				result = orgfile.exists();
-			} catch (SmbException e) {
-				throw new FileAccessException(e);
-			}
-		}
-		else if (SMBLIB == SMBLIB_SMBJ) {
+		else {
 			// smbjの場合
 			String host = "";
 			String share = "";
@@ -506,7 +351,7 @@ public class FileAccess {
 		return result;
 	}
 
-	public static boolean isDirectory(String url, String user, String pass) throws MalformedURLException, SmbException {
+	public static boolean isDirectory(String url, String user, String pass) throws MalformedURLException {
 		Log.d("FileAccess", "isDirectory url=" + url + ", user=" + user + ", pass=" + pass);
 		boolean result = false;
 		if (url.startsWith("/")) {
@@ -514,17 +359,7 @@ public class FileAccess {
 			File orgfile = new File(url);
 			result = orgfile.isDirectory();
 		}
-		else if (SMBLIB == SMBLIB_JCIFS) {
-			// jcifsの場合
-			SmbFile orgfile;
-			orgfile = FileAccess.jcifsFile(url, user, pass);
-			try {
-				result = orgfile.isDirectory();
-			} catch (SmbException e) {
-				result = false;
-			}
-		}
-		else if (SMBLIB == SMBLIB_SMBJ) {
+		else {
 			// smbjの場合
 			String host = "";
 			String share = "";
@@ -553,7 +388,7 @@ public class FileAccess {
 		return result;
 	}
 
-	public static ArrayList<FileData> listFiles(String url, String user, String pass) throws SmbException {
+	public static ArrayList<FileData> listFiles(String url, String user, String pass) {
 		Log.d("FileAccess", "listFiles url=" + url + ", user=" + user + ", pass=" + pass);
 		boolean isLocal;
 
@@ -586,8 +421,6 @@ public class FileAccess {
 
 		// ファイルリストを取得
 		File lfiles[] = null;
-		SmbFile jcifsFile = null;
-		SmbFile[] jcifsFiles = null;
 		Session smbjSession = null;
 		DiskShare smbjShare = null;
 		ArrayList<FileIdBothDirectoryInformation> smbjFiles = null;
@@ -604,36 +437,7 @@ public class FileAccess {
 			length = lfiles.length;
 		}
 
-		else if (SMBLIB == SMBLIB_JCIFS) {
-			// jcifsの場合のファイル一覧取得
-			try {
-				jcifsFile = FileAccess.jcifsFile(url, user, pass);
-			} catch (MalformedURLException e) {
-				return fileList;
-			}
-			try {
-				if ((url).indexOf("/", 6) == (url).length() - 1) {
-					// ホスト名までしか指定されていない場合
-					fnames = jcifsFile.list();
-					if (fnames == null || fnames.length == 0) {
-						return fileList;
-					}
-					length = fnames.length;
-				}
-				else {
-					// 共有ポイントまで指定済みの場合
-					jcifsFiles = jcifsFile.listFiles();
-					if (jcifsFiles == null || jcifsFiles.length == 0) {
-						return fileList;
-					}
-					length = jcifsFiles.length;
-				}
-			} catch (SmbException e) {
-				return fileList;
-			}
-		}
-
-		else if (SMBLIB == SMBLIB_SMBJ) {
+		else {
 			// smbjの場合のファイル一覧取得
 			try {
 				if ((url).indexOf("/", 6) == (url).length() - 1) {
@@ -684,28 +488,7 @@ public class FileAccess {
 				size = lfiles[i].length();
 				date = lfiles[i].lastModified();
 			}
-			else if (SMBLIB == SMBLIB_JCIFS) {
-				// jcifsの場合
-				if ((url).indexOf("/", 6) == (url).length() - 1) {
-					// ホスト名までしか指定されていない場合
-					name = fnames[i];
-					// 全部フォルダ扱い
-					flag = true;
-				}
-				else {
-					// 共有ポイントまで指定済みの場合
-					name = jcifsFiles[i].getName();
-					int len = name.length();
-					if (name != null && len >= 1 && name.substring(len - 1).equals("/")) {
-						flag = true;
-					} else {
-						flag = false;
-					}
-					size = jcifsFiles[i].length();
-					date = jcifsFiles[i].lastModified();
-				}
-			}
-			else if (SMBLIB == SMBLIB_SMBJ) {
+			else {
 				// smbjの場合
 				if ((url).indexOf("/", 6) == (url).length() - 1) {
 					// ホスト名までしか指定されていない場合
@@ -848,43 +631,7 @@ public class FileAccess {
 				}
 			}
 		}
-		else if (SMBLIB == SMBLIB_JCIFS) {
-			// jcifsの場合
-			SmbFile orgfile;
-			try {
-				orgfile = FileAccess.jcifsFile(uri + path + fromfile, user, pass);
-				if (orgfile.exists() == false) {
-					// 変更前ファイルが存在しなければエラー
-					throw new FileAccessException("File not found.");
-				}
-			} catch (MalformedURLException e) {
-				throw new FileAccessException(e);
-			} catch (SmbException e) {
-				throw new FileAccessException(e);
-			}
-
-			SmbFile dstfile;
-			try {
-				dstfile = FileAccess.jcifsFile(uri + path + tofile, user, pass);
-				if (dstfile.exists() == true) {
-					// 変更後ファイルが存在すればエラー
-					throw new FileAccessException("File access error.");
-				}
-			} catch (MalformedURLException e) {
-				throw new FileAccessException(e);
-			} catch (SmbException e) {
-				throw new FileAccessException(e);
-			}
-
-			// ファイル名変更
-			try {
-				orgfile.renameTo(dstfile);
-				return dstfile.exists();
-			} catch (SmbException e) {
-				throw new FileAccessException(e);
-			}
-		}
-		else if (SMBLIB == SMBLIB_SMBJ) {
+		else {
 			// smbjの場合
 
 			if (exists(uri + path + fromfile, user, pass) == false) {
@@ -965,22 +712,7 @@ public class FileAccess {
 			}
 			return orgfile.exists();
 		}
-		else if (SMBLIB == SMBLIB_JCIFS) {
-			// jcifsの場合
-			SmbFile orgfile;
-			try {
-				orgfile = FileAccess.jcifsFile(url, user, pass);
-			} catch (MalformedURLException e) {
-				throw new FileAccessException(e);
-			}
-			try {
-				orgfile.delete();
-				return orgfile.exists();
-			} catch (SmbException e) {
-				throw new FileAccessException(e);
-			}
-		}
-		else if (SMBLIB == SMBLIB_SMBJ) {
+		else {
 			// smbjの場合
 			String host = "";
 			String share = "";
@@ -1009,7 +741,6 @@ public class FileAccess {
 			}
 			return exists(url, user, pass);
 		}
-		return false;
 	}
 
 	// ディレクトリ作成
