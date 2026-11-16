@@ -1,21 +1,17 @@
 package src.comitton.config;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import src.comitton.common.DEF;
 
 import android.app.Dialog;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
 import android.preference.DialogPreference;
 import android.preference.PreferenceManager;
@@ -123,76 +119,8 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 		}
 
 
-		FileInputStream is = null;
-		InputStreamReader sr = null;
-		BufferedReader br = null;
-		Editor ed = mSp.edit();
-		try {
-			is = new FileInputStream(filepath);
-			sr = new InputStreamReader(is, "UTF-8");
-			br = new BufferedReader(sr, 8192);
-
-			// 既存の設定を削除
-			Map<String, ?> keys = mSp.getAll();
-			if (keys != null) {
-				for (String key : keys.keySet()) {
-					if (DEF.checkExportKey(key) == true) {
-						// 出力対象
-						ed.remove(key);
-					}
-				}
-			}
-
-			// ファイル読み込み
-			String line;
-			while ((line = br.readLine()) != null) {
-				// 種別取得
-				char valuetype = line.charAt(0);
-				// '='の前後をキーと値にする
-				int index = line.indexOf('=', 2);
-				if (index <= 0) {
-					continue;
-				}
-				// キーと値を取得
-				String key = line.substring(2, index);
-				String value = line.substring(index + 1);
-				switch (valuetype) {
-					case 'S':
-					case 's': // NxT専用キー
-					{
-						ed.putString(key, value);
-						break;
-					}
-					case 'B':
-					case 'b': // NxT専用キー
-					{
-						boolean work = Boolean.parseBoolean(value);
-						ed.putBoolean(key, work);
-						break;
-					}
-					case 'F':
-					case 'f': // NxT専用キー
-					{
-						float work = Float.parseFloat(value);
-						ed.putFloat(key, work);
-						break;
-					}
-					case 'I':
-					case 'i': // NxT専用キー
-					{
-						int work = Integer.parseInt(value);
-						ed.putInt(key, work);
-						break;
-					}
-					case 'L':
-					case 'l': // NxT専用キー
-					{
-						long work = Long.parseLong(value);
-						ed.putLong(key, work);
-						break;
-					}
-				}
-			}
+		try (FileInputStream is = new FileInputStream(filepath)) {
+			SettingBackupHelper.importFromStream(mSp, is);
 		}
 		catch (Exception ex) {
 			// 例外発生
@@ -202,25 +130,6 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 			}
 			Log.e("Bookmark/Load", msg);
 			return;
-		}
-		finally {
-			try {
-				if (br != null) {
-					br.close();
-				}
-				if (sr != null) {
-					sr.close();
-				}
-				if (is != null) {
-					is.close();
-				}
-			}
-			catch (Exception e) {
-				;
-			}
-			if (ed != null) {
-				ed.commit();
-			}
 		}
 		Dialog dialog = getDialog();
 		if (dialog != null) {

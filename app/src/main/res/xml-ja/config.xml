@@ -107,6 +107,14 @@
             android:key="ImportSetting"
             android:summary="選択したファイルの内容を現在の設定に上書します。\n ([sdcard]/comittona/conf/*.setを参照)"
             android:title="設定ファイルの適用" />
+        <Preference
+            android:key="ExportSettingSaf"
+            android:summary="任意の保存先（Downloadやクラウドなど）を選択して現在の設定を出力します。"
+            android:title="外部ファイルへエクスポート" />
+        <Preference
+            android:key="ImportSettingSaf"
+            android:summary="任意の場所から設定ファイル（*.set）を選択して現在の設定に上書します。"
+            android:title="外部ファイルからインポート" />
     </PreferenceCategory>
     <PreferenceCategory android:title="オンラインヘルプ" >
         <PreferenceScreen

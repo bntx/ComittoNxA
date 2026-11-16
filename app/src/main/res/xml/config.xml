@@ -97,6 +97,14 @@
             android:key="ImportSetting"
             android:summary="Overwrite the current settings with the contents of the select file.\n (reference file : [sdcard]/comittona/conf/*.set)"
             android:title="Load setting from file" />
+        <Preference
+            android:key="ExportSettingSaf"
+            android:summary="Choose a destination (such as Downloads or cloud storage) to export the current settings."
+            android:title="Export to external file" />
+        <Preference
+            android:key="ImportSettingSaf"
+            android:summary="Choose a settings file (*.set) from any location to overwrite the current settings."
+            android:title="Import from external file" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Online Help" >
         <PreferenceScreen

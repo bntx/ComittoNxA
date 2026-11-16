@@ -1,19 +1,11 @@
 package src.comitton.config;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 import src.comitton.common.DEF;
 
@@ -140,72 +132,12 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 		String filepath = getFilePath();
 		filepath += mEditView.getText() + DEF.EXTENSION_SETTING;
 
-		FileOutputStream os;
-		OutputStreamWriter sw;
-		BufferedWriter bw;
-
-		try {
-			// ファイルオープン
-			os = new FileOutputStream(filepath, false);
-			sw = new OutputStreamWriter(os, "UTF-8");
-			bw = new BufferedWriter(sw, 8192);
-		}
-		catch (Exception e) {
-			// ファイル作成失敗
-			errorToast("ファイル作成エラー", e);
-			return;
-		}
-
-		try {
-			Map<String, ?> keyMap = mSp.getAll();
-			if (keyMap != null) {
-				String line;
-				Set<String> keys = keyMap.keySet();
-				// キーをソートする
-				keys = new TreeSet<String>(keys);
-				for (String key : keys) {
-					if (DEF.checkExportKey(key) == false) {
-						continue;
-					}
-					// NxT専用キーチェック
-					boolean ex = DEF.checkTonlyExportKey( key );
-
-					Object value = keyMap.get(key);
-					String className = value.getClass().getName();
-					if (className.equals("java.lang.String")) {
-						line = (ex ? "s:" : "S:") + key + "=" + value.toString();
-					}
-					else if (className.equals("java.lang.Boolean")) {
-						line = (ex ? "b:" : "B:") + key + "=" + value.toString();
-					}
-					else if (className.equals("java.lang.Float")) {
-						line = (ex ? "f:" : "F:") + key + "=" + value.toString();
-					}
-					else if (className.equals("java.lang.Integer")) {
-						line = (ex ? "i:" : "I:") + key + "=" + value.toString();
-					}
-					else if (className.equals("java.lang.Long")) {
-						line = (ex ? "l:" : "L:") + key + "=" + value.toString();
-					}
-					else {
-						continue;
-					}
-					bw.write(line);
-					bw.newLine();
-				}
-			}
+		try (FileOutputStream os = new FileOutputStream(filepath, false)) {
+			SettingBackupHelper.exportToStream(mSp, os);
 		}
 		catch (Exception e) {
 			errorToast("ファイル書き込みエラー", e);
-		}
-
-		try {
-			bw.flush();
-			bw.close();
-		}
-		catch (Exception e) {
-			// クローズエラー
-			errorToast("ファイルクローズエラー", e);
+			return;
 		}
 
 		Toast.makeText(mContext, "Saved to " + filepath, Toast.LENGTH_SHORT).show();

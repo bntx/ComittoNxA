@@ -176,6 +176,8 @@ public class DEF {
 
 	public static final String KEY_EXPORTSETTING = "ExportSetting";
 	public static final String KEY_IMPORTSETTING = "ImportSetting";
+	public static final String KEY_EXPORTSETTING_SAF = "ExportSettingSaf";
+	public static final String KEY_IMPORTSETTING_SAF = "ImportSettingSaf";
 
 	public static final String KEY_CONFHELP = "ConfHelp";
 	public static final String KEY_FILEHELP = "FileHelp";
