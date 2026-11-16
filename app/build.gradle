@@ -6,6 +6,7 @@ def versionPatch = 0
 def revision = "A"
 
 android {
+    namespace 'jp.dip.muracoro.comittona'
     compileSdkVersion 33
     buildToolsVersion '33.0.2'
     defaultConfig {
@@ -63,7 +64,6 @@ android {
 
 repositories {
     google()
-    jcenter()
     mavenCentral()
 }
 
