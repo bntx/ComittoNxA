@@ -12,6 +12,7 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceGroup;
 import android.preference.PreferenceScreen;
 import android.view.Window;
 
@@ -21,6 +22,7 @@ public class SetConfigActivity extends PreferenceActivity implements OnSharedPre
 		super.onCreate(savedInstanceState);
 
 		addPreferencesFromResource(R.xml.config);
+		fixPreferenceIntents(getPreferenceScreen());
 
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_CONFHELP);
@@ -36,6 +38,26 @@ public class SetConfigActivity extends PreferenceActivity implements OnSharedPre
 				return true;
 			}
 		});
+	}
+
+	/**
+	 * PreferenceScreen に定義された Intent のターゲットパッケージを現在のアプリパッケージに合わせる
+	 */
+	private void fixPreferenceIntents(PreferenceGroup group) {
+		if (group == null) {
+			return;
+		}
+		String packageName = getPackageName();
+		for (int i = 0; i < group.getPreferenceCount(); i++) {
+			Preference pref = group.getPreference(i);
+			Intent intent = pref.getIntent();
+			if (intent != null && intent.getComponent() != null) {
+				intent.setClassName(packageName, intent.getComponent().getClassName());
+			}
+			if (pref instanceof PreferenceGroup) {
+				fixPreferenceIntents((PreferenceGroup) pref);
+			}
+		}
 	}
 
 	@Override
