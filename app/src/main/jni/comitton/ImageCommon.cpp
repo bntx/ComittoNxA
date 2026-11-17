@@ -33,9 +33,9 @@ int			*gSclIntParam3 = NULL;
 int			gMaxColumn = 0;
 int			gMaxLine = 0;
 
-int DrawBitmap(int page, int half, int x, int y, void *canvas, int width, int height, int stride, IMAGEDATA *pData)
+int DrawBitmap(int page, int half, int x, int y, void *canvas, int width, int height, int stride, int format, IMAGEDATA *pData)
 {
-	WORD	*pixels = (WORD*)canvas;
+	char	*rowPtr = (char*)canvas;
 	int		image_width;
 	int		image_height;
 
@@ -60,7 +60,7 @@ int DrawBitmap(int page, int half, int x, int y, void *canvas, int width, int he
 
 	if (y > 0) {
 		// 描画開始位置をずらす
-		pixels = (WORD*)(((char*)pixels) + stride * y);
+		rowPtr += stride * y;
 		height -= y;
 	}
 	else if (y < 0) {
@@ -69,7 +69,7 @@ int DrawBitmap(int page, int half, int x, int y, void *canvas, int width, int he
 	}
 
 	if (x > 0) {
-		pixels = pixels + x;
+		rowPtr += x * (format ? sizeof(uint32_t) : sizeof(WORD));
 		width -= x;
 	}
 	else if (x < 0) {
@@ -127,9 +127,18 @@ int DrawBitmap(int page, int half, int x, int y, void *canvas, int width, int he
 			buffpos = 0;
 		}
 //		LOGD("DEBUG2:yy=%d, idx=%d, pos=%d, off=%d", yy, buffindex, buffpos, buffpos + xpos + HOKAN_DOTS / 2);
-		memcpy(pixels, &gBuffMng[buffindex].Buff[buffpos + xpos + HOKAN_DOTS / 2], dots * sizeof(WORD));
+		WORD *src = &gBuffMng[buffindex].Buff[buffpos + xpos + HOKAN_DOTS / 2];
+		if (format) {
+			uint32_t *dst = (uint32_t*)rowPtr;
+			for (int xx = 0 ; xx < dots ; xx ++) {
+				dst[xx] = RGB565ToRGBA8888(src[xx]);
+			}
+		}
+		else {
+			memcpy(rowPtr, src, dots * sizeof(WORD));
+		}
 
-		pixels = (WORD*)(((char*)pixels) + stride);
+		rowPtr += stride;
 		buffpos += linesize;
 	}
 	return 0;
@@ -249,7 +258,7 @@ int DrawBitmap(int page, int half, int x, int y, void *canvas, int width, int he
 //	return 0;
 //}
 
-int DrawScaleBitmap(int page, int rotate, int s_x, int s_y, int s_cx, int s_cy, int d_x, int d_y, int d_cx, int d_cy, void *canvas, int width, int height, int stride, int psel, IMAGEDATA *pData, int cut_left, int cut_right, int cut_top, int cut_bottom)
+int DrawScaleBitmap(int page, int rotate, int s_x, int s_y, int s_cx, int s_cy, int d_x, int d_y, int d_cx, int d_cy, void *canvas, int width, int height, int stride, int format, int psel, IMAGEDATA *pData, int cut_left, int cut_right, int cut_top, int cut_bottom)
 {
 	LOGD("DrawScaleBitmap : page=%d, rote=%d, s(x=%d, y=%d, cx=%d, cy=%d)-d(x=%d, y=%d, cx=%d, cy=%d) / (w=%d, h=%d, s=%d) / p=%d cut(l=%d, r=%d, t=%d, b=%d)"
 			, page, rotate
@@ -258,7 +267,7 @@ int DrawScaleBitmap(int page, int rotate, int s_x, int s_y, int s_cx, int s_cy, 
 			, width, height, stride, psel
 			, cut_left, cut_right, cut_top, cut_bottom);
 
-	WORD	*pixels = (WORD*)canvas;
+	char	*rowPtr = (char*)canvas;
 	int		image_width  = pData->OrgWidth;
 	int		image_height = pData->OrgHeight;
 
@@ -351,12 +360,17 @@ int DrawScaleBitmap(int page, int rotate, int s_x, int s_y, int s_cx, int s_cy, 
 							xi = OrgHeight - (ypos + 1);
 							yi = xpos[xx];
 						}
-						pixels[xx] = gDsLinesPtr[yi][xi];
+						if (format) {
+							((uint32_t*)rowPtr)[xx] = RGB565ToRGBA8888(gDsLinesPtr[yi][xi]);
+						}
+						else {
+							((WORD*)rowPtr)[xx] = gDsLinesPtr[yi][xi];
+						}
 					}
 				}
 			}
 			// 描画先バッファの1行目から順に描く
-			pixels = (WORD*)(((char*)pixels) + stride);
+			rowPtr += stride;
 		}
 		free (xpos);
 	}
@@ -395,11 +409,16 @@ int DrawScaleBitmap(int page, int rotate, int s_x, int s_y, int s_cx, int s_cy, 
 							xi = OrgHeight - (ypos[yy] + 1);
 							yi = xpos;
 						}
-						pixels[yy] = gDsLinesPtr[yi][xi];
+						if (format) {
+							((uint32_t*)rowPtr)[yy] = RGB565ToRGBA8888(gDsLinesPtr[yi][xi]);
+						}
+						else {
+							((WORD*)rowPtr)[yy] = gDsLinesPtr[yi][xi];
+						}
 					}
 				}
 			}
-			pixels = (WORD*)(((char*)pixels) + stride);
+			rowPtr += stride;
 		}
 		free (ypos);
 	}

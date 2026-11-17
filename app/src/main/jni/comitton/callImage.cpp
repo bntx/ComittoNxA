@@ -177,8 +177,8 @@ JNIEXPORT jint JNICALL Java_src_comitton_stream_CallImgLibrary_ThumbnailDraw(JNI
 		return -2;
 	}
 
-	if (info.format != ANDROID_BITMAP_FORMAT_RGB_565) {
-		LOGE("Bitmap format is not RGB_565 !");
+	if (info.format != ANDROID_BITMAP_FORMAT_RGB_565 && info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
+		LOGE("Bitmap format is not RGB_565 or RGBA_8888 !");
 		return -3;
 	}
 
@@ -187,7 +187,7 @@ JNIEXPORT jint JNICALL Java_src_comitton_stream_CallImgLibrary_ThumbnailDraw(JNI
 		return -4;
 	}
 
-	ret = ThumbnailDraw(id, index, info.width, info.height, info.stride, (BYTE*)canvas);
+	ret = ThumbnailDraw(id, index, info.width, info.height, info.stride, info.format == ANDROID_BITMAP_FORMAT_RGBA_8888 ? 1 : 0, (BYTE*)canvas);
 
 	AndroidBitmap_unlockPixels(env, bitmap);
 	return ret;
@@ -628,8 +628,8 @@ JNIEXPORT jint JNICALL Java_src_comitton_stream_CallImgLibrary_ImageDraw (JNIEnv
 		return -2;
 	}
 
-	if (info.format != ANDROID_BITMAP_FORMAT_RGB_565) {
-		LOGE("Bitmap format is not RGB_565 !");
+	if (info.format != ANDROID_BITMAP_FORMAT_RGB_565 && info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
+		LOGE("Bitmap format is not RGB_565 or RGBA_8888 !");
 		return -3;
 	}
 
@@ -639,7 +639,7 @@ JNIEXPORT jint JNICALL Java_src_comitton_stream_CallImgLibrary_ImageDraw (JNIEnv
 	}
 
 //	memset(canvas, 0, info.width * info.height * sizeof(uint16_t));
-	ret = DrawBitmap(page, half, x, y, canvas, info.width, info.height, info.stride, &gImageData[page]);
+	ret = DrawBitmap(page, half, x, y, canvas, info.width, info.height, info.stride, info.format == ANDROID_BITMAP_FORMAT_RGBA_8888 ? 1 : 0, &gImageData[page]);
 
 	AndroidBitmap_unlockPixels(env, bitmap);
 #ifdef DEBUG
@@ -679,8 +679,8 @@ JNIEXPORT jint JNICALL Java_src_comitton_stream_CallImgLibrary_ImageScaleDraw (J
 		return -3;
 	}
 
-	if (info.format != ANDROID_BITMAP_FORMAT_RGB_565) {
-		LOGE("Bitmap format is not RGB_565 !");
+	if (info.format != ANDROID_BITMAP_FORMAT_RGB_565 && info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
+		LOGE("Bitmap format is not RGB_565 or RGBA_8888 !");
 		return -4;
 	}
 
@@ -690,7 +690,7 @@ JNIEXPORT jint JNICALL Java_src_comitton_stream_CallImgLibrary_ImageScaleDraw (J
 	}
 
 //	memset(canvas, 0, info.width * info.height * sizeof(uint16_t));
-	ret = DrawScaleBitmap(page, rotate, s_x, s_y, s_cx, s_cy, d_x, d_y, d_cx, d_cy, canvas, info.width, info.height, info.stride, psel, &gImageData[page], cut_left, cut_right, cut_top, cut_bottom);
+	ret = DrawScaleBitmap(page, rotate, s_x, s_y, s_cx, s_cy, d_x, d_y, d_cx, d_cy, canvas, info.width, info.height, info.stride, info.format == ANDROID_BITMAP_FORMAT_RGBA_8888 ? 1 : 0, psel, &gImageData[page], cut_left, cut_right, cut_top, cut_bottom);
 
 	AndroidBitmap_unlockPixels(env, bitmap);
 	return ret;

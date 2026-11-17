@@ -310,7 +310,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		Canvas canvas = null;
 		SurfaceHolder surfaceHolder = getHolder();
 		try {
-			canvas = surfaceHolder.lockCanvas(); // ロックして、書き込み用のcanvasを受け取る
+			canvas = surfaceHolder.lockHardwareCanvas(); // ロックして、書き込み用のcanvasを受け取る
 			if (canvas == null)
 				return false; // canvasが受け取れてなかったら抜ける
 
@@ -1265,7 +1265,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 			if (cx > 0 && cy > 0) {
 				for (int retry = 0 ; retry < 3 ; retry ++) {
 					try {
-						mBackBitmap = Bitmap.createBitmap(cx, cy, Config.RGB_565);
+						mBackBitmap = Bitmap.createBitmap(cx, cy, Config.ARGB_8888);
 						break;
 					}
 					catch (OutOfMemoryError e) {
@@ -1308,7 +1308,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		FontMetrics fm = test.getFontMetrics();
 		float textpos = -fm.top + (32 - (-fm.top + fm.bottom)) / 2;
 		
-		Bitmap bm = Bitmap.createBitmap(32, 32, Config.RGB_565);
+		Bitmap bm = Bitmap.createBitmap(32, 32, Config.ARGB_8888);
 		Canvas canvas = new Canvas(bm);
 		canvas.drawColor(0);
 
@@ -1526,7 +1526,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		for (int retry = 0 ; retry < 3 ; retry ++) {
 			try {
-				mBackBitmap = Bitmap.createBitmap(w, h, Config.RGB_565);
+				mBackBitmap = Bitmap.createBitmap(w, h, Config.ARGB_8888);
 				break;
 			}
 			catch (OutOfMemoryError e) {
@@ -2316,7 +2316,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		if (mDrawScale <= 1.10) {
 			for (int retry = 0 ; retry < 3 ; retry ++) {
 				try {
-					mDrawBitmap = Bitmap.createBitmap(mDrawWidth, mDrawHeight, Config.RGB_565);
+					mDrawBitmap = Bitmap.createBitmap(mDrawWidth, mDrawHeight, Config.ARGB_8888);
 					break;
 				}
 				catch (OutOfMemoryError e) {

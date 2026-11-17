@@ -277,7 +277,7 @@ public class ThumbnailView extends View implements Runnable, Callback {
 			bcy = 1;
 		}
 		try {
-			mDrawBitmap = Bitmap.createBitmap(bcx, bcy, Config.RGB_565);
+			mDrawBitmap = Bitmap.createBitmap(bcx, bcy, Config.ARGB_8888);
 		}
 		catch (Exception e) {
 			;

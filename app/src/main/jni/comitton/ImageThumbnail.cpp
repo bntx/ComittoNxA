@@ -446,7 +446,7 @@ ERROREND:
 	return ret;
 }
 
-int ThumbnailDraw(long long id, int index, int bmp_width, int bmp_height, int bmp_stride, BYTE* canvas)
+int ThumbnailDraw(long long id, int index, int bmp_width, int bmp_height, int bmp_stride, int format, BYTE* canvas)
 {
 	int ret = 0;
 
@@ -512,7 +512,17 @@ int ThumbnailDraw(long long id, int index, int bmp_width, int bmp_height, int bm
 			nextindex = gThBlockMng[nextindex];
 			linecount = 0;
 		}
-		memcpy (pos, buff, linesize);
+		if (format) {
+			const WORD *src = (const WORD*)buff;
+			uint32_t *dst = (uint32_t*)pos;
+			int copy_width = (bmp_width < width) ? bmp_width : width;
+			for (int xx = 0 ; xx < copy_width ; xx ++) {
+				dst[xx] = RGB565ToRGBA8888(src[xx]);
+			}
+		}
+		else {
+			memcpy (pos, buff, linesize);
+		}
 		pos += bmp_stride;
 		buff += linesize;
 		linecount ++;

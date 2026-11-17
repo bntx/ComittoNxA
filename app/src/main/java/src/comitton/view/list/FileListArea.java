@@ -754,7 +754,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
         mListIconHeight = (short)listThumbSizeH;
 
 		if (mThumbFlag) {
-			mDrawBitmap = Bitmap.createBitmap(mIconWidth, mIconHeight, Config.RGB_565);
+			mDrawBitmap = Bitmap.createBitmap(mIconWidth, mIconHeight, Config.ARGB_8888);
 
 			// ビットマップリソースを読み込み
 			Resources res = mContext.getResources();

@@ -29,6 +29,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, UpdateListener, DrawNoticeListener, Callback, Runnable {
 	// 描画領域の種別
@@ -94,6 +96,13 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private ImageData mImage[] = new ImageData[2];
 	private Bitmap mBackBitmap;
 	private Bitmap mCanvasBitmap;
+	private final Object mSurfaceLock = new Object();
+	private final LinkedHashMap<String, Bitmap> mPageBitmapCache = new LinkedHashMap<String, Bitmap>(16, 0.75f, true) {
+		@Override
+		protected boolean removeEldestEntry(Map.Entry<String, Bitmap> eldest) {
+			return size() > 8;
+		}
+	};
 
 	private Point mScrollPos[];
 	private Point mScrollPoint;
@@ -184,6 +193,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	public void breakThread() {
 		mIsRunning = false;
 		mUpdateThread.interrupt();
+		synchronized (mPageBitmapCache) {
+			mPageBitmapCache.clear();
+		}
 	}
 
 	public void updateNotify() {
@@ -240,25 +252,31 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			mDrawLock = false;
 		}
 
-		Canvas canvas = null;
-		SurfaceHolder surfaceHolder = getHolder();
-		try {
-			canvas = surfaceHolder.lockCanvas(); // ロックして、書き込み用のcanvasを受け取る
-			if (canvas == null) {
-				return false; // canvasが受け取れてなかったら抜ける
+		synchronized (this) {
+			if (mImage[0] == null || mCanvasBitmap == null) {
+				return false;
 			}
+		}
 
-//			synchronized (surfaceHolder) {
+		synchronized (mSurfaceLock) {
+			Canvas canvas = null;
+			SurfaceHolder surfaceHolder = getHolder();
+			try {
+				canvas = surfaceHolder.lockHardwareCanvas(); // ロックして、書き込み用のcanvasを受け取る
+				if (canvas == null) {
+					return false; // canvasが受け取れてなかったら抜ける
+				}
+
 				draw(canvas, false);
-//			}
-		} finally {
-			if (canvas != null)
-				try {
-					surfaceHolder.unlockCanvasAndPost(canvas); // 例外が出て、canvas受け取ってたらロックはずす
-				}
-				catch (IllegalStateException e) {
-					// Surface has already been released.
-				}
+			} finally {
+				if (canvas != null)
+					try {
+						surfaceHolder.unlockCanvasAndPost(canvas); // 例外が出て、canvas受け取ってたらロックはずす
+					}
+					catch (IllegalStateException e) {
+						// Surface has already been released.
+					}
+			}
 		}
 		return true;
 	}
@@ -270,6 +288,43 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		Message msg = mHandler.obtainMessage(HMSG_ATTENUATE);
 		msg.arg1 = ++ mAttenuateCount;
 		mHandler.sendMessageAtTime(msg, NextTime);
+	}
+
+	private void drawPageToCanvas(Canvas targetCanvas, ImageData img, int dl, int dt, boolean pseLand, Paint paint) {
+		if (img == null) {
+			return;
+		}
+		int bw = pseLand ? img.SclHeight : img.SclWidth;
+		int bh = pseLand ? img.SclWidth : img.SclHeight;
+		if (bw <= 0 || bh <= 0) {
+			return;
+		}
+		String key = img.Page + "_" + img.HalfMode + "_" + bw + "_" + bh;
+		Bitmap pageBm;
+		synchronized (mPageBitmapCache) {
+			pageBm = mPageBitmapCache.get(key);
+		}
+		if (pageBm == null) {
+			try {
+				pageBm = Bitmap.createBitmap(bw, bh, Config.ARGB_8888);
+			}
+			catch (OutOfMemoryError e) {
+				synchronized (mPageBitmapCache) {
+					mPageBitmapCache.clear();
+				}
+				System.gc();
+				return;
+			}
+			int ret = CallImgLibrary.ImageDraw(img.Page, img.HalfMode, 0, 0, pageBm);
+			if (ret < 0) {
+				pageBm.recycle();
+				return;
+			}
+			synchronized (mPageBitmapCache) {
+				mPageBitmapCache.put(key, pageBm);
+			}
+		}
+		targetCanvas.drawBitmap(pageBm, dl, dt, paint);
 	}
 
 	public void draw(Canvas canvas, boolean isCreateBack) {
@@ -334,11 +389,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			if (mImage[0] == null) {
 				return;
 			}
-			if (isCreateBack == false && isBackDraw == true && mBackBitmap != null) {
-				// 次ページ読み込み中の表示
-				// ビットマップ作成ではない
-				canvas.drawBitmap(mBackBitmap, 0, 0, mDrawPaint);
-				if (effectRate == 0.0f) {
+			if (isCreateBack == false) {
+				canvas.drawColor(mMgnColor);
+				if (isBackDraw == true && effectRate == 0.0f && mBackBitmap != null) {
+					// 次ページ読み込み中の前ページ表示
+					// ビットマップ作成ではない
+					canvas.drawBitmap(mBackBitmap, 0, 0, mDrawPaint);
 					if (pseLand == true) {
 						int pos;
 						if (cx < cy) {
@@ -356,6 +412,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 					return;
 				}
+			}
+			else {
+				canvas.drawColor(mMgnColor);
 			}
 
 			Paint paint = mDrawPaint;
@@ -400,6 +459,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 				}
 //					if (mScrlNext == false || mOverScrollX == 0) {
+				if (isCreateBack == false && mBackBitmap != null) {
+					if (effect == 3) {	// ページめくりスクロール：前ページも一緒にスクロールさせる
+						float backX = pseLand ? ((effectRate > 0) ? -(ty + cy) : (cy - ty))
+											  : ((effectRate > 0) ? (tx + cx) : (tx - cx));
+						canvas.drawBitmap(mBackBitmap, backX, 0, mDrawPaint);
+					}
+					else {	// フリップ・フェードイン：前ページを背面に固定表示
+						canvas.drawBitmap(mBackBitmap, 0, 0, mDrawPaint);
+					}
+				}
 				if (effect == 1) {	// ページめくりフリップ
 					canvas.save();
 					if (pseLand == false) {
@@ -433,17 +502,13 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				// ■■■ 通常時の画面描画
 				int dl;
 				int dt;
-				int ret;
 
-				// 前後のページを淡く表示するためのグラデーション色
-				int colors[] = {
-						0xFF000000 | (mMgnColor & 0x00FFFFFF),
-						0xFF000000 | (mMgnColor & 0x00FFFFFF),
-						0xFF000000 | (mMgnColor & 0x00FFFFFF),
-						0xFF000000 | (mMgnColor & 0x00FFFFFF)};
-
-				Canvas bmpCanvas = new Canvas(mCanvasBitmap);
-    			bmpCanvas.drawColor(mMgnColor);
+				Paint bmpPaint = null;
+				if (effectRate != 0.0f && effect == 2) {	// ページめくりフェードイン
+					scrollReset();
+					bmpPaint = mAlphaPaint;
+					bmpPaint.setAlpha((int) (255 * (1.0f - effectRate) * (effectRate > 0 ? 1 : -1)));
+				}
 
 				// 「スクロールで前後のページへ移動」の設定が有効のとき
 				if (mScrlNext) {
@@ -487,183 +552,6 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 
 				}
-				
-				int prev2Page = -1;
-				int prevPage = -1;
-				int nextPage = -1;
-				int next2Page = -1;
-
-				ImageData prev2Image = null;
-				ImageData prevImage = null;
-				ImageData next2Image = null;
-				ImageData nextImage = null;
-
-				GradientDrawable prevGrad = null;
-				GradientDrawable nextGrad = null;
-
-				// 前のページと次のページのページ番号を求める
-				if (mImage[0] != null && mImage[1] == null ) {
-					prevPage = mImage[0].Page - 1;
-					nextPage = mImage[0].Page + 1;
-				}
-				if (mImage[0] == null && mImage[1] != null ) {
-					prevPage = mImage[1].Page - 1;
-					nextPage = mImage[1].Page + 1;
-				}
-				if (mImage[0] != null && mImage[1] != null ) {
-					prevPage = Math.min(mImage[0].Page, mImage[1].Page) - 1;
-					nextPage = Math.max(mImage[0].Page, mImage[1].Page) + 1;
-				}
-				prev2Page = prevPage - 1;
-				next2Page = nextPage + 1;
-
-				// 前のページを表示用Bitmapに書き込む
-				if (prevPage > 0  && prevPage < mImageManager.length()) {
-					prevImage = mImageManager.getImageData(prevPage);
-
-					if (prevImage != null) {
-						if (mPageWay == DEF.PAGEWAY_RIGHT) {
-							// 右開き
-							if (pseLand == false) {
-								// 横持ち
-								dl = (int) drawLeft + drawWidthSum;
-								dt = (int) drawTop + ((mDrawHeightMax - prevImage.SclHeight) / 2);
-							} else {
-								// 縦持ち
-								dl = cy - (int) drawTop - prevImage.SclHeight + ((mDrawHeightMax - prevImage.SclHeight) / 2);
-								dt = (int) drawLeft + drawWidthSum;
-							}
-						} else {
-							// 左開き
-							if (pseLand == false) {
-								// 横持ち
-								dl = (int) drawLeft - prevImage.SclWidth;
-								dt = (int) drawTop;
-							} else {
-								// 縦持ち
-								dl = cy - (int) drawTop - prevImage.SclHeight;
-								dt = (int) drawLeft - prevImage.SclWidth;
-							}
-						}
-//						Log.d("MyImageView", "draw prevImage page=" + prevPage + ", dl=" + dl + ", dt=" + dt);
-						ret = CallImgLibrary.ImageDraw(prevImage.Page, prevImage.HalfMode, dl, dt, mCanvasBitmap);
-						if (ret < 0) {
-							// 描画エラー
-							;
-						}
-					}
-				}
-
-				// ２つ前のページを表示用Bitmapに書き込む
-				if (prev2Page > 0  && prev2Page < mImageManager.length()) {
-					prev2Image = mImageManager.getImageData(prev2Page);
-
-					if (prevImage != null && prev2Image != null) {
-						if (mPageWay == DEF.PAGEWAY_RIGHT) {
-							// 右開き
-							if (pseLand == false) {
-								// 横持ち
-								dl = (int) drawLeft + drawWidthSum + prevImage.SclWidth;
-								dt = (int) drawTop + ((mDrawHeightMax - prev2Image.SclHeight) / 2);
-							} else {
-								// 縦持ち
-								dl = cy - (int) drawTop - prev2Image.SclHeight + ((mDrawHeightMax - prev2Image.SclHeight) / 2);
-								dt = (int) drawLeft + drawWidthSum + prevImage.SclWidth;
-							}
-						} else {
-							// 左開き
-							if (pseLand == false) {
-								// 横持ち
-								dl = (int) drawLeft - prevImage.SclWidth - prev2Image.SclWidth;
-								dt = (int) drawTop;
-							} else {
-								// 縦持ち
-								dl = cy - (int) drawTop - prev2Image.SclHeight;
-								dt = (int) drawLeft - prevImage.SclWidth - prev2Image.SclWidth;
-							}
-						}
-//						Log.d("MyImageView", "draw prevImage page=" + prevPage + ", dl=" + dl + ", dt=" + dt);
-						ret = CallImgLibrary.ImageDraw(prev2Image.Page, prev2Image.HalfMode, dl, dt, mCanvasBitmap);
-						if (ret < 0) {
-							// 描画エラー
-							;
-						}
-					}
-				}
-
-				// 次のページを表示用Bitmapに書き込む
-				if (nextPage > 0  && nextPage < mImageManager.length()) {
-					nextImage = mImageManager.getImageData(nextPage);
-
-					if (nextImage != null) {
-						if (mPageWay == DEF.PAGEWAY_RIGHT) {
-							// 右開き
-							if (pseLand == false) {
-								// 横持ち
-								dl = (int) drawLeft - nextImage.SclWidth;
-								dt = (int) drawTop + ((mDrawHeightMax - nextImage.SclHeight) / 2);
-							} else {
-								// 縦持ち
-								dl = cy - (int) drawTop - nextImage.SclHeight;
-								dt = (int) drawLeft - nextImage.SclWidth + ((mDrawHeightMax - nextImage.SclHeight) / 2);
-							}
-						} else {
-							// 左開き
-							if (pseLand == false) {
-								// 横持ち
-								dl = (int) drawLeft + drawWidthSum;
-								dt = (int) drawTop;
-							} else {
-								// 縦持ち
-								dl = cy - (int) drawTop - nextImage.SclHeight;
-								dt = (int) drawLeft + drawWidthSum;
-							}
-						}
-//						Log.d("MyImageView", "draw nextImage page=" + nextPage + ", dl=" + dl + ", dt=" + dt);
-						ret = CallImgLibrary.ImageDraw(nextImage.Page, nextImage.HalfMode, dl, dt, mCanvasBitmap);
-						if (ret < 0) {
-							// 描画エラー
-							;
-						}
-					}
-				}
-
-				// 2つ次のページを表示用Bitmapに書き込む
-				if (next2Page > 0  && next2Page < mImageManager.length()) {
-					next2Image = mImageManager.getImageData(next2Page);
-
-					if (nextImage != null && next2Image != null) {
-						if (mPageWay == DEF.PAGEWAY_RIGHT) {
-							// 右開き
-							if (pseLand == false) {
-								// 横持ち
-								dl = (int) drawLeft - nextImage.SclWidth - next2Image.SclWidth;
-								dt = (int) drawTop + ((mDrawHeightMax - next2Image.SclHeight) / 2);
-							} else {
-								// 縦持ち
-								dl = cy - (int) drawTop - next2Image.SclHeight + ((mDrawHeightMax - next2Image.SclHeight) / 2);
-								dt = (int) drawLeft - nextImage.SclWidth - next2Image.SclWidth;
-							}
-						} else {
-							// 左開き
-							if (pseLand == false) {
-								// 横持ち
-								dl = (int) drawLeft + drawWidthSum + nextImage.SclWidth;
-								dt = (int) drawTop;
-							} else {
-								// 縦持ち
-								dl = cy - (int) drawTop - next2Image.SclHeight;
-								dt = (int) drawLeft + drawWidthSum + nextImage.SclWidth;
-							}
-						}
-//						Log.d("MyImageView", "draw nextImage page=" + nextPage + ", dl=" + dl + ", dt=" + dt);
-						ret = CallImgLibrary.ImageDraw(next2Image.Page, next2Image.HalfMode, dl, dt, mCanvasBitmap);
-						if (ret < 0) {
-							// 描画エラー
-							;
-						}
-					}
-				}
 
 				// 左ページを表示用Bitmapに書き込む
 				if (mImage[1] != null) {
@@ -678,11 +566,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
     					dt = (int)drawLeft;
     				}
 //					Log.d("MyImageView", "draw mImage[1] page=" + mImage[1].Page + ", dl=" + dl + ", dt=" + dt);
-    				ret = CallImgLibrary.ImageDraw(mImage[1].Page, mImage[1].HalfMode, dl, dt, mCanvasBitmap);
-    				if (ret < 0) {
-    					// 描画エラー
-    					;
-    				}
+    				drawPageToCanvas(canvas, mImage[1], dl, dt, pseLand, bmpPaint);
     			}
 
 				// 右ページを表示用Bitmapに書き込む
@@ -698,96 +582,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
     					dt = (int)drawLeft + drawWidthSum - drawWidth0;
     				}
 //					Log.d("MyImageView", "draw mImage[0] page=" + mImage[0].Page + ", dl=" + dl + ", dt=" + dt);
-    				ret = CallImgLibrary.ImageDraw(mImage[0].Page, mImage[0].HalfMode, dl, dt, mCanvasBitmap);
-    				if (ret < 0) {
-    					// 描画エラー
-    					;
-    				}
-    			}
-
-				// // 「スクロールで前後のページへ移動」の設定が無効か、スクロール量超過していないなら前後のページにグラデーションを重ねる
-				if (mScrlNext == false || mOverScrollX == 0) {
-					if (pseLand == false) {
-						// 横持ち
-						dl = (int) drawLeft;
-						dt = (int) drawTop;
-
-						prevGrad = new GradientDrawable(Orientation.RIGHT_LEFT, colors);
-						mDrawRect.set(0, 0, dl, cy);
-						prevGrad.setBounds(mDrawRect);
-					} else {
-						// 縦持ち
-						dl = cy - (int) drawTop - (int) drawHeight1;
-						dt = (int) drawLeft;
-
-						prevGrad = new GradientDrawable(Orientation.BOTTOM_TOP, colors);
-						mDrawRect.set(0, 0, dt, cy);
-						prevGrad.setBounds(mDrawRect);
-					}
-
-					if (pseLand == false) {
-						// 横持ち
-						dl = (int) drawLeft + drawWidthSum - drawWidth0;
-						dt = (int) drawTop;
-
-						nextGrad = new GradientDrawable(Orientation.LEFT_RIGHT, colors);
-						mDrawRect.set((int) drawLeft + drawWidthSum, 0, cx, cy);
-						nextGrad.setBounds(mDrawRect);
-					} else {
-						// 縦持ち
-						dl = cy - (int) drawTop - (int) drawHeight0;
-						dt = (int) drawLeft + drawWidthSum - drawWidth0;
-
-						nextGrad = new GradientDrawable(Orientation.TOP_BOTTOM, colors);
-						mDrawRect.set(0, (int) drawLeft + drawWidthSum, cx, cy);
-						nextGrad.setBounds(mDrawRect);
-					}
-				}
-
-    			if (effectRate == 0.0f) {
-					// 作成した画像を表示
-					canvas.drawBitmap(mCanvasBitmap, 0, 0, null);
-
-					// // スクロールで前後のページへ移動無効か、スクロール超過していないなら前後のページを淡く表示する
-					if (mScrlNext == false || mOverScrollX == 0) {
-						if (prevGrad != null) {
-							prevGrad.draw(canvas);
-						}
-						if (nextGrad != null) {
-							nextGrad.draw(canvas);
-						}
-					}
-    			}
-    			else {
-//    				// エフェクト中
-//    				Rect rc = mDrawRect;
-//    				if (pseLand == false) {
-//        				rc.set(0, 0, cx, cy);
-//        				if (effectRate > 0) {
-//        					rc.right -= mMgnRight - 1;
-//        				}
-//        				else {
-//        					rc.left += mMgnLeft + 1;
-//        				}
-//    				}
-//    				else {
-//        				rc.set(0, 0, cy, cx);
-//        				if (effectRate > 0) {
-//        					rc.bottom -= mMgnRight - 1;
-//        				}
-//        				else {
-//        					rc.top += mMgnLeft + 1;
-//        				}
-//    				}
-//					if (mScrlNext == false || mOverScrollX == 0) {
-						Paint bmpPaint = null;
-						if (effect == 2) {	// ページめくりフェードイン
-							scrollReset();
-							bmpPaint = mAlphaPaint;
-							bmpPaint.setAlpha((int) (255 * (1.0f - effectRate) * (effectRate > 0 ? 1 : -1)));
-						}
-						canvas.drawBitmap(mCanvasBitmap, 0, 0, bmpPaint);
-//					}
+    				drawPageToCanvas(canvas, mImage[0], dl, dt, pseLand, bmpPaint);
     			}
 			}
 
@@ -932,7 +727,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			int cx = getWidth();
 			int cy = getHeight();
 			if (cx > 0 && cy > 0) {
-				mBackBitmap = Bitmap.createBitmap(cx, cy, Config.RGB_565);
+				mBackBitmap = Bitmap.createBitmap(cx, cy, Config.ARGB_8888);
 			}
 		}
 		mEffect = effect;
@@ -960,6 +755,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	// ガイド表示用クラス
 	public void setImageManager(ImageManager imgMgr) {
 		mImageManager = imgMgr;
+		synchronized (mPageBitmapCache) {
+			mPageBitmapCache.clear();
+		}
 	}
 
 	public void createBackground(boolean flag) {
@@ -1007,7 +805,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 //		if (mBackMode) {
 		for (int retry = 0 ; retry < 3 ; retry ++) {
 			try {
-				mBackBitmap = Bitmap.createBitmap(w, h, Config.RGB_565);
+				mBackBitmap = Bitmap.createBitmap(w, h, Config.ARGB_8888);
 				Canvas canvas = new Canvas(mBackBitmap);
 				canvas.drawColor(mMgnColor);
 				break;
@@ -1029,9 +827,14 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			mDispHeight = w;
 		}
 
+		synchronized (mPageBitmapCache) {
+			mPageBitmapCache.clear();
+		}
+
 		for (int retry = 0 ; retry < 3 ; retry ++) {
 			try {
-				mCanvasBitmap = Bitmap.createBitmap(w, h, Config.RGB_565);
+				mCanvasBitmap = Bitmap.createBitmap(w, h, Config.ARGB_8888);
+				break;
 			}
 			catch (OutOfMemoryError e) {
 				Log.i("ImageView", "OutOfMemoryError");
@@ -1065,6 +868,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mTextView.setText(mResizingStr);
 		mTextView.setBackgroundColor(mTopColor);
 */
+		if (isResize) {
+			synchronized (mPageBitmapCache) {
+				mPageBitmapCache.clear();
+			}
+		}
 		mIsPageBack = isPageBack;
 //		int disp_x = getWidth();
 //		int disp_y = getHeight();

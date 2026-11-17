@@ -1,5 +1,13 @@
 //#define DEBUG
 #include <jni.h>
+#include <stdint.h>
+
+static inline uint32_t RGB565ToRGBA8888(uint16_t rgb) {
+    uint32_t r = ((rgb >> 8) & 0xF8) | ((rgb >> 13) & 0x07);
+    uint32_t g = ((rgb >> 3) & 0xFC) | ((rgb >> 9) & 0x03);
+    uint32_t b = ((rgb << 3) & 0xF8) | ((rgb >> 2) & 0x07);
+    return 0xFF000000u | (b << 16) | (g << 8) | r;
+}
 
 #define  LOG_TAG    "comitton_img"
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
@@ -87,7 +95,7 @@ int ThumbnailCheckAll(long long);
 int ThumbnailSizeCheck(long long, int, int);
 int ThumbnailImageAlloc(long long, int, int);
 int ThumbnailSave(long long, int, int, int, int, BYTE*);
-int ThumbnailDraw(long long, int, int, int, int, BYTE*);
+int ThumbnailDraw(long long, int, int, int, int, int, BYTE*);
 void ThumbnailFree(long long);
 
 int ReleaseBuff(int, int, int);
@@ -101,8 +109,8 @@ void ScaleMemColumnFree(void);
 int ScaleMemInit(void);
 int ScaleMemAlloc(int, int);
 
-int DrawScaleBitmap(int, int, int, int, int, int, int, int, int, int, void *, int, int, int, int, IMAGEDATA *, int, int, int, int);
-int DrawBitmap(int, int half, int x, int y, void *, int, int, int, IMAGEDATA *);
+int DrawScaleBitmap(int, int, int, int, int, int, int, int, int, int, void *, int, int, int, int, int, IMAGEDATA *, int, int, int, int);
+int DrawBitmap(int, int half, int x, int y, void *, int, int, int, int, IMAGEDATA *);
 // int DrawBitmapReg90(int, int half, int x, int y, void *, int, int, int, IMAGEDATA *);
 
 int CreateScale(int, int, int, int, int, int, int, int, int, int, int, int, int, int, jint*);
