@@ -1329,7 +1329,7 @@ public class DEF {
 						if (num_len1 < num_len2) {
 							int difflen = num_len2 - num_len1;
 							for (int i = 0; i < difflen; i++) {
-								int diff = getNumber('０') - getNumber(num2.charAt(i));
+								int diff = getNumber('0') - getNumber(num2.charAt(i));
 								if (diff != 0) {
 									// num1が大きければプラス
 									return diff;
@@ -1373,7 +1373,7 @@ public class DEF {
 						if (num_len1 < num_len2) {
 							int difflen = num_len2 - num_len1;
 							for (int i = 0; i < difflen; i++) {
-								int diff = getNumber('０') - getNumber(num2.charAt(i));
+								int diff = getNumber('0') - getNumber(num2.charAt(i));
 								if (diff != 0) {
 									// num1が大きければマイナス
 									return -diff;
